@@ -1,0 +1,387 @@
+---
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+confusion_curve <- function (resp_vals, pred_vals, resp_thresholds, ...) {
+  crossing(
+    resp_thresh = resp_thresholds,
+    pred_thresh = predictor_thresholds(pred_vals)) %>%
+    group_by(resp_thresh, pred_thresh) %>%
+    summarize(
+      confusion(pred_vals, resp_vals, pred_thresh, resp_thresh, ...),
+      .groups = "drop")
+}
+
+confusion <- function (
+  pred_vals, resp_vals,
+  pred_thresh = 0.5, resp_thresh = 0.5,
+  pred_pos_if = `>=`, resp_pos_if = `>=`,
+  negative_rates = FALSE, common_names = FALSE) {
+  pred_pos <- pred_pos_if(pred_vals, pred_thresh)
+  resp_pos <- resp_pos_if(resp_vals, resp_thresh)
+  pred_neg <- !pred_pos
+  resp_neg <- !resp_pos
+  res <- tibble(
+    tp = sum(pred_pos & resp_pos),
+    fp = sum(pred_pos & resp_neg),
+    tn = sum(pred_neg & resp_neg),
+    fn = sum(pred_neg & resp_pos)) %>%
+    mutate(
+      tpr = tp / (tp + fn),
+      tnr = tn / (tn + fp),
+      ppv = tp / (tp + fp),
+      npv = tn / (tn + fn)) %>%
+    mutate(
+      ppv = ifelse(is.nan(ppv), 1, ppv),
+      npv = ifelse(is.nan(npv), 1, npv))
+  if (negative_rates) {
+    res <- res %>%
+      mutate(
+        fnr = 1 - tpr,
+        fpr = 1 - tnr,
+        fdr = 1 - ppv,
+        fomr = 1 - npv)
+    }
+  if (common_names) {
+    res <- res %>%
+      mutate(
+        sensitivity = tpr,
+        recall = tpr,
+        specificity = tnr,
+        selectivity = tnr,
+        precision = ppv,
+        miss_rate = 1 - tpr,
+        fall_out = 1 - tnr,
+        accuracy = (tp + tn) / (tp + fp + tn + fn))
+  }
+  res
+}
+
+predictor_thresholds <- function (predictor_vals, pad = 0.1) {
+  middle_thresholds <- sort(unique(predictor_vals))
+  lowest_threshold <- min(middle_thresholds) - pad
+  highest_threshold <- max(middle_thresholds) + pad
+  c(lowest_threshold, middle_thresholds, highest_threshold)
+}
+```
+
+```{r}
+assembly_cols <- cols(
+  taxid = col_integer(),
+  species_taxid = col_integer(),
+  excluded_from_refseq = col_character())
+refseq_assemblies <- read_tsv(
+  "refseq_bacteria_assembly_summary.txt", col_types = assembly_cols,
+  quote="") %>%
+  mutate(assembly_level = fct_relevel(
+    assembly_level, "Complete Genome", "Chromosome", "Scaffold", "Contig"))
+```
+
+```{r}
+refseq_species <- refseq_assemblies %>%
+  select(assembly_accession, organism_name, species_taxid) %>%
+  mutate(assembly_label = str_replace(
+    organism_name, "^(\\S+) (\\S+) ", "\\1 \\2\n")) %>%
+  mutate(assembly_label = str_remove(assembly_label, " = .+$")) %>%
+  mutate(species = str_replace(
+    organism_name, "^(\\S+ \\S+) .+$", "\\1"))
+```
+
+```{r}
+species_ani_thresholds <- read_csv("species_ani_thresholds.csv")
+```
+
+```{r}
+b <- tibble(fp=list.files("typestrain_refseq_data/", full.names = T)) %>%
+  rowwise() %>%
+  do(suppressMessages(read_tsv(.$fp))) %>%
+  ungroup() %>%
+  filter(ani > 0)
+```
+
+```{r}
+b_cts <- b %>%
+  count(query_assembly, sort=T) %>%
+  left_join(refseq_species, by=c(query_assembly="assembly_accession")) %>%
+  mutate(species = fct_reorder(species, n)) %>%
+  select(species, accession=query_assembly, n)
+b_cts
+```
+
+```{r}
+b_cts %>%
+  ggplot() +
+  geom_col(aes(x=n, y=species)) +
+  scale_x_sqrt(breaks = c(1e2, 5e2, 1e3, 5e3, 1e4, 5e4)) +
+  labs(y="", x="Number of genomes in RefSeq\nwith at least 90% 16S percent identity") +
+  theme_bw()
+```
+
+
+```{r}
+pctid_breaks <- seq(90, 100, by = 2.5)
+pctid_labels <- glue::glue("{sprintf(\"%3.1f\", pctid_breaks)}%")
+ani_breaks <- seq(0.80, 1.00, by=0.05)
+ani_labels <- glue::glue("{round(ani_breaks * 100, 0)}%")
+
+b %>%
+  left_join(refseq_species, by = c(query_assembly = "assembly_accession")) %>%
+  rename(
+    query_name = organism_name, query_taxid = species_taxid,
+    query_label = assembly_label, query_species = species) %>%
+  left_join(refseq_species, by = c(subject_assembly = "assembly_accession")) %>%
+  rename(
+    subject_name = organism_name, subject_taxid = species_taxid,
+    subject_label = assembly_label, subject_species = species) %>%
+  mutate(same_species = query_taxid == subject_taxid) %>%
+  left_join(species_ani_thresholds, by=c(query_assembly="assembly_accession")) %>%
+  ggplot(aes(y=pctid, x=ani, color=same_species)) +
+  geom_point(size = 0.7) +
+  geom_vline(aes(xintercept = ani_threshold), linetype = "dashed", color = "#999999") +
+  scale_y_continuous(breaks = pctid_breaks, labels = pctid_labels) +
+  scale_x_continuous(breaks = ani_breaks, labels = ani_labels) +
+  facet_wrap(~ query_label, ncol = 3) +
+  ggsci::scale_color_d3() +
+  labs(
+    x = "Full genome average nucleotide identity",
+    y = "16S rRNA gene percent identity",
+    color = "Marked as\nsame species\nin RefSeq") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_text(vjust=1),
+    panel.spacing = grid::unit(1, "lines"))
+ggsave("species_stackebrandt_curves.pdf", width = 8, height = 12, useDingbats = F)
+```
+
+```{r}
+b %>%
+  left_join(refseq_species, by = c(query_assembly = "assembly_accession")) %>%
+  rename(
+    query_name = organism_name, query_taxid = species_taxid,
+    query_label = assembly_label, query_species = species) %>%
+  left_join(refseq_species, by = c(subject_assembly = "assembly_accession")) %>%
+  rename(
+    subject_name = organism_name, subject_taxid = species_taxid,
+    subject_label = assembly_label, subject_species = species) %>%
+  mutate(same_species = query_taxid == subject_taxid) %>%
+  left_join(species_ani_thresholds, by=c(query_assembly="assembly_accession")) %>%
+  filter(bai) %>%
+  ggplot(aes(y=pctid, x=ani, color=same_species)) +
+  geom_point(size = 0.7) +
+  geom_vline(aes(xintercept = ani_threshold), linetype = "dashed", color = "#999999") +
+  geom_hline(yintercept = 98, linetype = "dashed", color = "#999999") +
+  scale_y_continuous(breaks = pctid_breaks, labels = pctid_labels) +
+  scale_x_continuous(breaks = ani_breaks, labels = ani_labels) +
+  facet_wrap(~ query_label, ncol = 2) +
+  ggsci::scale_color_d3() +
+  labs(
+    x = "Full genome average nucleotide identity",
+    y = "16S rRNA gene percent identity",
+    color = "Marked as\nsame species\nin RefSeq") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_text(vjust=1),
+    panel.spacing = grid::unit(1, "lines"))
+ggsave("bai_stackebrandt_curves.pdf", width = 5, height = 4, useDingbats = F)
+```
+
+
+Evaluate the hard threshold algorithm for each species.
+
+```{r}
+pctid_exceptions <- c("GCF_008000975.1", "GCF_001688845.2")
+b_thresholds <- b %>%
+  mutate(pctid = ifelse(
+    (query_assembly %in% pctid_exceptions) & (pctid < 95.0), 95.0, pctid)) %>%
+  filter(pctid >= 95.0) %>%
+  left_join(species_ani_thresholds, by=c(query_assembly="assembly_accession")) %>%
+  mutate(same_species = ani >= ani_threshold)
+```
+
+```{r}
+b_confusion <- b_thresholds %>%
+  group_by(query_assembly) %>%
+  summarise(
+    confusion_curve(ani, pctid, ani_threshold[1], negative_rates = T, common_names = T),
+    .groups="drop")
+```
+
+```{r}
+rate_labels <- tibble(
+  short_name = c("tnr", "tpr"),
+  long_name = c("True negative rate", "True positive rate"))
+b_confusion %>%
+  arrange(pred_thresh) %>%
+  filter(pred_thresh <= 100.0) %>%
+  select(query_assembly, resp_thresh, pred_thresh, tpr, tnr) %>%
+  pivot_longer(cols = -c(query_assembly, resp_thresh, pred_thresh)) %>%
+  left_join(refseq_species, by = c(query_assembly = "assembly_accession")) %>%
+  left_join(rate_labels, by=c(name="short_name")) %>%
+  ggplot(aes(x=pred_thresh, y=value, color=long_name)) +
+  geom_step(direction="vh") +
+  geom_vline(xintercept = 97.5, linetype = "dashed", color = "#999999") +
+  facet_wrap(~ assembly_label, ncol=3) +
+  ggsci::scale_color_jama() +
+  scale_y_continuous(breaks = c(0, 0.5, 1.0)) +
+  scale_x_continuous(limits = c(95, 100)) +
+  labs(
+    y="True positive/true negative rate",
+    x="16S rRNA gene identity threshold",
+    color="") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_text(vjust=1),
+    panel.spacing = grid::unit(1, "lines"))
+ggsave("species_tpr_tnr.pdf", width = 8, height = 8, useDingbats = F)
+```
+
+```{r}
+b_accuracy_max <- b_confusion %>%
+  filter(pred_thresh <= 100.0) %>%
+  group_by(query_assembly) %>%
+  arrange(pred_thresh) %>%
+  summarize(
+    accuracy_maxval_lower = pred_thresh[
+      min(which(accuracy == max(accuracy)))],
+    accuracy_maxval_upper = pred_thresh[
+      max(which(accuracy == max(accuracy)))],
+    accuracy_nearmax_lower = pred_thresh[
+      min(which(accuracy >= (0.8 * max(accuracy)))) + 1],
+    accuracy_nearmax_upper = pred_thresh[
+      max(which(accuracy >= (0.8 * max(accuracy))))],
+    .groups = "drop") %>%
+  left_join(refseq_species, by = c(query_assembly = "assembly_accession"))
+
+b_accuracy_max %>%
+  ggplot(aes(y = species)) +
+  geom_linerange(
+    aes(xmin = accuracy_nearmax_lower - 0.05, xmax = accuracy_nearmax_upper),
+    size=1, color="#666666") +
+  geom_linerange(
+    aes(xmin = accuracy_maxval_lower - 0.05, xmax = accuracy_maxval_upper + 0.05),
+    size=5, color="orange") +
+  geom_vline(xintercept = 97.5, linetype = "dashed", color = "#999999") +
+  scale_x_continuous(limits = c(90, 100.05)) +
+  labs(
+    y="",
+    x="16S rRNA gene identity threshold",
+    color="") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_text(vjust=1),
+    panel.spacing = grid::unit(1, "lines"))
+ggsave("species_accuracy.pdf", width = 8, height = 8, useDingbats = F)
+```
+```
+
+
+```{r}
+library(pROC)
+```
+
+```{r}
+b_confusion %>%
+  left_join(refseq_species, by = c(query_assembly = "assembly_accession")) %>%
+  rename(query_name = organism_name, query_taxid = species_taxid) %>%
+  mutate(query_name = str_replace(query_name, "^(\\S+) (\\S+) ", "\\1 \\2\n")) %>%
+  mutate(query_name = str_remove(query_name, " = .+$")) %>%
+  arrange(fpr, tpr) %>%
+  ggplot(aes(x=fpr, y=tpr)) +
+  geom_step(direction = "hv") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "#999999") +
+  facet_wrap(~ query_name, ncol=3) +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_text(vjust=1),
+    panel.spacing = grid::unit(1, "lines"))
+ggsave("species_roc.pdf", width = 8, height = 8, useDingbats = F)
+```
+
+Compute AUC values
+
+```{r}
+auc_tibble <- function(...) {
+  rocobj <- roc(...)
+  auc_val <- as.numeric(rocobj$auc)
+  ci_res <- suppressWarnings(ci.auc(rocobj))
+  tibble(
+    auc = as.numeric(rocobj$auc),
+    ci_lower = ci_res[1], ci_med = ci_res[2], ci_upper = ci_res[3])
+}
+b_auc <- b_thresholds %>%
+  group_by(query_assembly) %>%
+  summarise(auc_tibble(same_species ~ pctid, direction = "<", levels = c(F, T))) %>%
+  ungroup()
+```
+
+```{r}
+b_auc %>%
+  left_join(refseq_species, by = c(query_assembly = "assembly_accession")) %>%
+  rename(query_name = organism_name, query_taxid = species_taxid) %>%
+  mutate(query_name = str_replace(query_name, "^(\\S+ \\S+) .+$", "\\1")) %>%
+  mutate(query_name = fct_reorder(query_name, auc)) %>%
+  ggplot(aes(y = query_name)) +
+  geom_point(aes(x = auc)) +
+  geom_linerange(aes(xmin = ci_lower, xmax = ci_upper)) +
+  scale_x_continuous(limits = c(0.45, 1), breaks = seq(0.5, 1, 0.1)) +
+  labs(x="AUC", y = "") + 
+  theme_bw()
+ggsave("species_auc.pdf", width = 5, height = 2.6, useDingbats = F)
+```
+
+Evaluate the soft threshold algorithm for each species.
+
+```{r}
+ksmooth_tibble <- function (x, y, ...) {
+  res <- ksmooth(x, y, ...)
+  tibble(x= res$x, y = res$y)
+}
+
+b_soft <- b %>%
+  left_join(species_ani_thresholds, by=c(query_assembly="assembly_accession")) %>%
+  mutate(same_species = as.numeric(ani >= ani_threshold)) %>%
+  group_by(query_assembly) %>%
+  summarise(
+    ksmooth_tibble(
+      x = pctid, y = same_species, 
+      bandwidth = 1.0,
+      x.points = seq(90, 100, 0.1))) %>%
+  ungroup() %>%
+  rename(pctid = x, p_same_species = y)
+
+```
+
+```{r}
+decay99 <- tibble(pctid = seq(90, 100, 0.1)) %>%
+  mutate(pctdiff = 100 - pctid) %>%
+  mutate(p_soft= exp(-pctdiff / 0.9))
+b_soft %>%
+  filter(!is.na(p_same_species)) %>%
+  left_join(refseq_species, by = c(query_assembly = "assembly_accession")) %>%
+  rename(query_name = organism_name, query_taxid = species_taxid) %>%
+  mutate(query_name = str_replace(query_name, "^(\\S+ \\S+) .+$", "\\1")) %>%
+  arrange(query_assembly, pctid) %>%
+  ggplot(aes(x=pctid, y=p_same_species)) +
+  geom_point(size=0.5) +
+  geom_line(aes(x=pctid, y=p_soft), data=decay99, color="#999999") +
+  #geom_vline(xintercept = 97.5, linetype="dashed", color="#999999") +
+  facet_wrap(~ query_name, ncol=3) +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_text(vjust=1),
+    panel.spacing = grid::unit(1, "lines"))
+ggsave("species_soft_threshold.pdf", width = 8, height = 8, useDingbats = F)
+```
+
+

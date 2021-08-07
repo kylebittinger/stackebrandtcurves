@@ -1,0 +1,25 @@
+assembly_accession,species_name,ani_threshold,bai
+GCF_000164675.2,Streptococcus parasanguinis,0.930,FALSE
+GCF_000175615.1,Rothia mucilaginosa,0.925,FALSE
+GCF_000191405.1,Haemophilus parainfluenzae,0.920,FALSE
+GCF_000144405.1,Prevotella melaninogenica,0.950,FALSE
+GCF_900186885.1,Veillonella parvula,0.940,FALSE
+GCF_000012825.1,Bacteroides vulgatus,0.970,FALSE
+GCF_900537995.1,Roseburia intestinalis,0.975,FALSE
+GCF_003324185.1,Faecalibacterium prausnitzii,0.930,FALSE
+GCF_003697165.2,Escherichia coli,0.950,FALSE
+GCF_009831375.1,[Ruminococcus] gnavus,0.960,FALSE
+GCF_006742205.1,Staphylococcus epidermidis,0.960,FALSE
+GCF_006364675.1,Staphylococcus aureus,0.950,FALSE
+GCF_000148585.2,Streptococcus mitis,0.920,FALSE
+GCF_003182075.1,Finegoldia magna,0.950,FALSE
+GCF_008728435.1,Cutibacterium acnes,0.950,FALSE
+GCF_014131755.1,Bacteroides thetaiotaomicron,0.965,FALSE
+GCF_005706655.1,Bacteroides fragilis,0.950,FALSE
+GCF_000157935.1,Prevotella copri,0.950,FALSE
+GCF_004295125.1,[Clostridium] scindens,0.950,TRUE
+GCF_008000975.1,Akkermansia muciniphilia,0.950,FALSE
+GCF_001688845.2,Muribaculum intestinalis,0.950,FALSE
+GCF_000156055.1,[Clostridium] hiranonis,0.950,TRUE
+GCF_008281175.1,[Clostridium] hylemonae,0.950,TRUE
+GCF_002865995.1,Clostridium sordellii,0.950,TRUE
