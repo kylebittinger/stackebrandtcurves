@@ -30,14 +30,10 @@ class AssemblyPair:
             query_seqid=None, subject_seqid=None):
         self.query = query
         self.subject = subject
-        self._pctid = pctid
+        self.pctid = pctid
         self.ani = None
         self.query_seqid = query_seqid
         self.subject_seqid = subject_seqid
-
-    @property
-    def pctid(self):
-        return round(float(self._pctid), 1)
 
     def compute_ani(self):
         ani_key = (self.query.accession, self.subject.accession)
@@ -60,11 +56,15 @@ class AssemblyPair:
             self.query.download_genome(self.genome_dir, query_fname)
             shutil.copy(query_genome_fp, query_cache_fp)
         subprocess.check_call(["gunzip", "-f", query_genome_fp])
+        if query_genome_fp.endswith(".gz"):
+            query_genome_fp = query_genome_fp[:-3]
 
         subject_fname = "{0}.fna.gz".format(self.subject.accession)
         subject_genome_fp = os.path.join(self.genome_dir, subject_fname)
         self.subject.download_genome(self.genome_dir, subject_fname)
         subprocess.check_call(["gunzip", "-f", subject_genome_fp])
+        if subject_genome_fp.endswith(".gz"):
+            subject_genome_fp = subject_genome_fp[:-3]
 
         print(
             "Computing ANI for", self.query.accession, "and",
@@ -72,27 +72,24 @@ class AssemblyPair:
         ani_fp = "tmp_ani.txt"
         subprocess.check_call([
             "fastANI",
-            "-q", self.query_genome_fp,
-            "-r", self.reference_genome_fp,
-            "-o", self.ani_fp,
+            "-q", query_genome_fp,
+            "-r", subject_genome_fp,
+            "-o", ani_fp,
         ])
 
         with open(ani_fp) as f:
             ani_result = next(parse_pairwise_ani(f))
         print("ANI:", ani_result["ani"])
-        self.ani_cache[ani_key] = ani_result["ani"]
-        self.ani = ani_result["ani"]
+        self.ani_cache[ani_key] = ani_result
+        self.ani = ani_result
 
     def format_output(self):
-        if self.query_seqid and self.subject_seqid:
-            return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(
-                self.query.accession, self.subject.accession,
-                self.query_seqid, self.subject_seqid,
-                self.pctid, self.ani,
-            )
-        return "{0}\t{1}\t{2}\t{3}\n".format(
+        pctid_format = round(float(self.pctid), 1)
+        return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(
             self.query.accession, self.subject.accession,
-            self.pctid, self.ani,
+            self.query_seqid, self.subject_seqid,
+            pctid_format, self.ani["ani"],
+            self.ani["fragments_aligned"], self.ani["fragments_total"],
         )
 
 ANI_FIELDS = [

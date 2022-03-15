@@ -3,6 +3,7 @@ import os
 import subprocess
 
 from .ani import AssemblyPair
+from .parse import parse_fasta, write_fasta
 
 class Refseq16SDatabase:
     def __init__(

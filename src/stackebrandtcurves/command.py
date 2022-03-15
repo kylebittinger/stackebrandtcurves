@@ -47,7 +47,7 @@ def main(argv=None):
     output_file.write(
         "query_assembly\tsubject_assembly\t"
         "query_seqid\tsubject_seqid\t"
-        "pctid\tani\n")
+        "pctid\tani\tfragments_aligned\tfragments_total\n")
 
     random.seed(args.seed)
 
