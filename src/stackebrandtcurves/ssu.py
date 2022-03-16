@@ -60,7 +60,7 @@ class Refseq16SDatabase:
                 pctid = hit["pident"]
                 yield AssemblyPair(query, subject, pctid)
 
-    def search_one(self, query_seqid, pctid, max_hits=10000, threads=None):
+    def search_one(self, query_seqid, pctid, threads=None):
         pctid_str = "{:.1f}".format(pctid)
         print("Searching", query_seqid, "at", pctid_str, "pct identity")
         query_seq = self.seqs[query_seqid]
@@ -75,7 +75,7 @@ class Refseq16SDatabase:
         aligner = PctidAligner(self.fasta_fp)
         aligner.search(
             query_fp, query_hits_fp, min_pctid=pctid,
-            threads=threads, max_hits=max_hits)
+            threads=threads)
         with open(query_hits_fp) as f:
             hits = aligner.parse(f)
             for hit in hits:
@@ -88,7 +88,7 @@ class Refseq16SDatabase:
                         hit["qseqid"], hit["sseqid"])
 
     def search_seq(
-            self, query_seqid, query_seq, min_pctid=90.0, max_hits=10000, threads=None):
+            self, query_seqid, query_seq, min_pctid=90.0, threads=None):
         query_fp = "temp_query.fasta"
         if os.path.exists(query_fp):
             os.rename(query_fp, "temp_prev_query.fasta")
@@ -100,7 +100,7 @@ class Refseq16SDatabase:
         aligner = PctidAligner(self.fasta_fp)
         aligner.search(
             query_fp, query_hits_fp, min_pctid=min_pctid,
-            threads=threads, max_hits=max_hits)
+            threads=threads)
         with open(query_hits_fp) as f:
             hits = aligner.parse(f)
             for hit in hits:
@@ -137,7 +137,7 @@ class PctidAligner:
 
     def search(
             self, input_fp=None, hits_fp=None, min_pctid=97.0,
-            threads=None, max_hits=10000):
+            threads=None):
         if input_fp is None:
             input_fp = self.fasta_fp
         if hits_fp is None:
@@ -152,15 +152,8 @@ class PctidAligner:
             "--iddef", "2", "--id", min_id,
             "--userfields",
             "query+target+id2",
+            "--maxaccepts", str(10000),
         ]
-        if max_hits is None:
-            args.extend([
-                "--maxaccepts", "0", "--maxrejects", "0",
-            ])
-        else:
-            args.extend([
-                "--maxaccepts", str(max_hits),
-            ])
         if threads is not None:
             args.extend(["--threads", str(threads)])
         print(args)

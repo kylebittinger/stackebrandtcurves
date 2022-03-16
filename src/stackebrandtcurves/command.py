@@ -22,10 +22,6 @@ def main(argv=None):
         help="Minimum 16S percent ID",
     )
     p.add_argument(
-        "--max-hits", type=int, default=10000,
-        help="Maximum number of 16S alignments to collect",
-    )
-    p.add_argument(
         "--max-unique-pctid", type=int, default=100,
         help=(
             "Maximum number of ANI comparisons for each unique value of 16S "
@@ -70,7 +66,7 @@ def main(argv=None):
 
     assembly_pairs = db.search_seq(
         query_seqid, query_seq,
-        min_pctid=args.min_pctid, max_hits=args.max_hits,
+        min_pctid=args.min_pctid,
         threads=args.num_threads)
     assembly_pairs = list(assembly_pairs)
     if args.max_unique_pctid:
