@@ -6,6 +6,7 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 ASSEMBLY_SUMMARY_FP = os.path.join(DATA_DIR, "muribaculum_assembly_summary.txt")
 
 RefseqAssembly.summary_fp = ASSEMBLY_SUMMARY_FP
+RefseqAssembly.rna_dir = DATA_DIR
 
 def test_load_parse_summary():
     assemblies = RefseqAssembly.load()
@@ -16,3 +17,15 @@ def test_load_parse_summary():
         "GCF_001688845.2_ASM168884v2")
     assert a.taxid == "1796646"
 
+def test_ssu_seqs():
+    a = RefseqAssembly(
+        assembly_accession = "GCF_001688845.2",
+        ftp_path = "/notaurl/GCF_001688845.2_ASM168884v2",
+    )
+
+    seqs = a.ssu_seqs
+    assert len(seqs) == 4
+
+    s0_desc, s0_seq = seqs[0]
+    assert s0_desc.startswith("lcl|NZ_CP015402.2_rrna_41 ")
+    assert s0_seq.startswith("ACAACGAAGAGTTTGATCCTGGCTCAGGATGAACGCTAGCGACAGG")
