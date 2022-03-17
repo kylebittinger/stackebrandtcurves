@@ -6,6 +6,7 @@ import urllib
 from .download import get_url
 from .parse import parse_fasta
 
+
 class RefseqAssembly:
     """A bacterial genome assembly from NCBI RefSeq
 
@@ -36,6 +37,13 @@ class RefseqAssembly:
         self._ssu_seqs = None
             
     @classmethod
+    def load(cls):
+        if not os.path.exists(cls.summary_fp):
+            get_url(cls.summary_url, cls.summary_fp)
+        with open(cls.summary_fp, "r") as f:
+            return {a.accession: a for a in cls.parse_summary(f)}
+
+    @classmethod
     def parse_summary(cls, f):
         for line in f:
             line = line.rstrip("\n")
@@ -63,15 +71,6 @@ class RefseqAssembly:
         res = [(desc, seq) for (desc, seq) in seqs if is_16S(desc)]
         self._ssu_seqs = res
         return res
-
-    @classmethod
-    def load(cls, summary_fp=None):
-        if summary_fp is None:
-            summary_fp = cls.summary_fp
-        if not os.path.exists(summary_fp):
-            get_url(cls.summary_url, summary_fp)
-        with open(summary_fp, "r") as f:
-            return {a.accession: a for a in cls.parse_summary(f)}
 
     @property
     def base_url(self):
