@@ -12,11 +12,11 @@ TEST_ACCESSIONS = os.path.join(DATA_DIR, "muribaculum_accessions.txt")
 RefseqAssembly.summary_fp = ASSEMBLY_SUMMARY_FP
 RefseqAssembly.rna_dir = DATA_DIR
 RefseqAssembly.genome_dir = DATA_DIR
-Refseq16SDatabase.search_dir = DATA_DIR
 
 MockAssembly = collections.namedtuple("Assembly", ["accession", "ssu_seqs"])
 
-def test_search_seq():
+def test_search_seq(tmpdir):
+    Refseq16SDatabase.search_dir = tmpdir
     assemblies = RefseqAssembly.load()
     db = Refseq16SDatabase(TEST_FASTA, TEST_ACCESSIONS)
     db.load(assemblies)
