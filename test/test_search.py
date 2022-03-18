@@ -26,6 +26,18 @@ def test_search_seq(tmpdir):
     last_hit = hits[-1]
     assert last_hit.subject.accession == "GCF_004792675.1"
 
+def test_exhaustive_search(tmpdir):
+    Refseq16SDatabase.search_dir = tmpdir
+    assemblies = RefseqAssembly.load()
+    db = Refseq16SDatabase(TEST_FASTA, TEST_ACCESSIONS)
+    db.load(assemblies)
+    hits = db.exhaustive_search(
+        "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
+    hits = list(hits)
+    assert len(hits) == 13
+    last_hit = hits[-1]
+    assert last_hit.subject.accession == "GCF_004792675.1"
+
 def test_add_assembly():
     a_seqs = [
         ("seq1", "GCTCGCATCGAT"),

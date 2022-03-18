@@ -7,6 +7,7 @@ from .parse import parse_fasta, write_fasta
 
 class Refseq16SDatabase:
     search_dir = "tmp_search"
+    subject_filename = "subject.fasta"
     query_filename = "query.fasta"
     hits_filename = "hits.txt"
     previous_query_filename = "previous_query.fasta"
@@ -96,9 +97,42 @@ class Refseq16SDatabase:
     def _temp_fp(self, filename):
         return os.path.join(self.search_dir, filename)
 
+    def exhaustive_search(
+            self, query_seqid, query_seq, min_pctid=90.0, threads=None):
+        already_found = set()
+        already_found.add(query_seqid)
+
+        hits = self.search_seq(query_seqid, query_seq, min_pctid, threads)
+        for hit in hits:
+            already_found.add(hit.subject_seqid)
+            yield hit
+
+        for trial in range(10):
+            print("Follow-up search, trial {0}".format(trial + 1))
+            subject_fp = self._temp_fp(self.subject_filename)
+            seqs_to_write = (
+                (seq_id, seq) for seq_id, seq in self.seqs.items()
+                if seq_id not in already_found)
+            with open(subject_fp, "w") as f:
+                write_fasta(f, seqs_to_write)
+            hits = self.search_seq(
+                query_seqid, query_seq, min_pctid, threads, subject_fp)
+            n_hits = 0
+            for hit in hits:
+                n_hits += 1
+                already_found.add(hit.subject_seqid)
+                yield hit
+            if n_hits == 0:
+                break
+        print("Exhausted 10 search trials")
+
     # Used by the main command
     def search_seq(
-            self, query_seqid, query_seq, min_pctid=90.0, threads=None):
+            self, query_seqid, query_seq, min_pctid=90.0, threads=None,
+            subject_fp=None):
+        if subject_fp is None:
+            subject_fp = self.fasta_fp
+
         query_fp = self._temp_fp(self.query_filename)
         previous_query_fp = self._temp_fp(self.previous_query_filename)
         if os.path.exists(query_fp):
@@ -111,7 +145,7 @@ class Refseq16SDatabase:
 
         with open(query_fp, "w") as f:
             write_fasta(f, [(query_seqid, query_seq)])
-        aligner = PctidAligner(self.fasta_fp)
+        aligner = PctidAligner(subject_fp)
         aligner.search(
             query_fp, hits_fp, min_pctid=min_pctid,
             threads=threads)
@@ -126,6 +160,8 @@ class Refseq16SDatabase:
                     yield AssemblyPair(
                         query, subject, pctid,
                         hit["qseqid"], hit["sseqid"])
+        if subject_fp is not None:
+            aligner.clear_db()
 
 
 class PctidAligner:
@@ -149,6 +185,9 @@ class PctidAligner:
             "--output", self.reference_udb_fp,
         ]
         return subprocess.check_call(args)
+
+    def clear_db(self):
+        os.remove(self.reference_udb_fp)
 
     def search(
             self, input_fp=None, hits_fp=None, min_pctid=97.0,

@@ -64,7 +64,7 @@ def main(argv=None):
     query_seqid = query_assembly_seqids[0]
     query_seq = db.seqs[query_seqid]
 
-    assembly_pairs = db.search_seq(
+    assembly_pairs = db.exhaustive_search(
         query_seqid, query_seq,
         min_pctid=args.min_pctid,
         threads=args.num_threads)
