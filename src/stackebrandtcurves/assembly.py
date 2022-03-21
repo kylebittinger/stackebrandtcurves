@@ -13,13 +13,14 @@ class RefseqAssembly:
     The assembly class holds info on the assebly, and can deliver
     genome or gene sequences for the assembly.
     """
+    summary_fp = "refseq_bacteria_assembly_summary.txt"
+    genome_dir = "genome_fasta"
+    rna_dir = "rna_fasta"
+
     summary_url = (
         "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/"
         "bacteria/assembly_summary.txt"
         )
-    summary_fp = "refseq_bacteria_assembly_summary.txt"
-    genome_dir = "genome_fasta"
-    rna_dir = "rna_fasta"
     summary_cols = [
         "assembly_accession", "bioproject", "biosample", "wgs_master",
         "refseq_category", "taxid", "species_taxid", "organism_name",
@@ -35,13 +36,14 @@ class RefseqAssembly:
         for key, val in kwargs.items():
             setattr(self, key, val)
         self._ssu_seqs = None
-            
+
     @classmethod
-    def load(cls):
-        if not os.path.exists(cls.summary_fp):
-            get_url(cls.summary_url, cls.summary_fp)
-        with open(cls.summary_fp, "r") as f:
-            return {a.accession: a for a in cls.parse_summary(f)}
+    def download_summary(cls, fp):
+        get_url(cls.summary_url, fp)
+
+    @classmethod
+    def load(cls, f):
+        return {a.accession: a for a in cls.parse_summary(f)}
 
     @classmethod
     def parse_summary(cls, f):

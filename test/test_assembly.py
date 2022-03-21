@@ -5,12 +5,12 @@ from stackebrandtcurves.assembly import RefseqAssembly
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 ASSEMBLY_SUMMARY_FP = os.path.join(DATA_DIR, "muribaculum_assembly_summary.txt")
 
-RefseqAssembly.summary_fp = ASSEMBLY_SUMMARY_FP
 RefseqAssembly.rna_dir = DATA_DIR
 RefseqAssembly.genome_dir = DATA_DIR
 
 def test_load_parse_summary():
-    assemblies = RefseqAssembly.load()
+    with open(ASSEMBLY_SUMMARY_FP) as f:
+        assemblies = RefseqAssembly.load(f)
     a = assemblies["GCF_001688845.2"]
     assert a.accession == "GCF_001688845.2"
     assert a.ftp_path == (

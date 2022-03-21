@@ -34,6 +34,10 @@ def main(argv=None):
         "--seed", type=int, default=42,
         help="Random number seed",
     )
+    p.add_argument(
+        "--assembly-summary",
+        help="Assembly summary file (default: download from NCBI)",
+    )
     args = p.parse_args(argv)
 
     if args.output_file is None:
@@ -47,7 +51,14 @@ def main(argv=None):
 
     random.seed(args.seed)
 
-    assemblies = RefseqAssembly.load()
+    if args.assembly_summary:
+        assembly_summary_fp = args.assembly_summary
+    else:
+        assembly_summary_fp = "refseq_bacteria_assembly_summary.txt"
+        RefseqAssembly.download_summary(assembly_summary_fp)
+
+    with open(assembly_summary_fp, "r") as f:
+        assemblies = RefseqAssembly.load(f)
 
     db = Refseq16SDatabase(
         "refseq_16S_all.fasta",
