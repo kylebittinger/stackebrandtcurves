@@ -34,7 +34,7 @@ def main(argv=None):
         "--seed", type=int, default=42,
         help="Random number seed",
     )
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     if args.output_file is None:
         args.output_file = "assembly_{0}_pctid_ani.txt".format(
