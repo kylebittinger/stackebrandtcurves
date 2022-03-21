@@ -94,7 +94,9 @@ class Refseq16SDatabase:
                         query, subject, pctid,
                         hit["qseqid"], hit["sseqid"])
 
-    def _temp_fp(self, filename):
+    def get_temp_fp(self, filename):
+        if not os.path.exists(self.search_dir):
+            os.mkdir(self.search_dir)
         return os.path.join(self.search_dir, filename)
 
     def exhaustive_search(
@@ -109,7 +111,7 @@ class Refseq16SDatabase:
 
         for trial in range(10):
             print("Follow-up search, trial {0}".format(trial + 1))
-            subject_fp = self._temp_fp(self.subject_filename)
+            subject_fp = self.get_temp_fp(self.subject_filename)
             seqs_to_write = (
                 (seq_id, seq) for seq_id, seq in self.seqs.items()
                 if seq_id not in already_found)
@@ -130,16 +132,17 @@ class Refseq16SDatabase:
     def search_seq(
             self, query_seqid, query_seq, min_pctid=90.0, threads=None,
             subject_fp=None):
+
         if subject_fp is None:
             subject_fp = self.fasta_fp
 
-        query_fp = self._temp_fp(self.query_filename)
-        previous_query_fp = self._temp_fp(self.previous_query_filename)
+        query_fp = self.get_temp_fp(self.query_filename)
+        previous_query_fp = self.get_temp_fp(self.previous_query_filename)
         if os.path.exists(query_fp):
             os.rename(query_fp, previous_query_fp)
 
-        hits_fp = self._temp_fp(self.hits_filename)
-        previous_hits_fp = self._temp_fp(self.previous_hits_filename)
+        hits_fp = self.get_temp_fp(self.hits_filename)
+        previous_hits_fp = self.get_temp_fp(self.previous_hits_filename)
         if os.path.exists(hits_fp):
             os.rename(hits_fp, previous_hits_fp)
 

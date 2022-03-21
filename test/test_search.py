@@ -16,7 +16,8 @@ RefseqAssembly.genome_dir = DATA_DIR
 MockAssembly = collections.namedtuple("Assembly", ["accession", "ssu_seqs"])
 
 def test_search_seq(tmpdir):
-    Refseq16SDatabase.search_dir = tmpdir
+    search_dir = os.path.join(tmpdir, "search_xyz")
+    Refseq16SDatabase.search_dir = search_dir
     assemblies = RefseqAssembly.load()
     db = Refseq16SDatabase(TEST_FASTA, TEST_ACCESSIONS)
     db.load(assemblies)
