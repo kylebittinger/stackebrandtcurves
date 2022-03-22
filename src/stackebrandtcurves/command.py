@@ -60,9 +60,7 @@ def main(argv=None):
     with open(assembly_summary_fp, "r") as f:
         assemblies = RefseqAssembly.load(f)
 
-    db = Refseq16SDatabase(
-        "refseq_16S_all.fasta",
-        "refseq_16S_accessions_all.txt")
+    db = Refseq16SDatabase()
     if os.path.exists(db.accession_fp):
         db.load(assemblies)
     else:

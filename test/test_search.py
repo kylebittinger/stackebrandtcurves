@@ -10,6 +10,7 @@ TEST_FASTA = os.path.join(DATA_DIR, "muribaculum.fasta")
 TEST_ACCESSIONS = os.path.join(DATA_DIR, "muribaculum_accessions.txt")
 
 RefseqAssembly.data_dir = DATA_DIR
+Refseq16SDatabase.data_dir = DATA_DIR
 
 MockAssembly = collections.namedtuple("Assembly", ["accession", "ssu_seqs"])
 
@@ -18,7 +19,7 @@ def test_search_seq(tmpdir):
     Refseq16SDatabase.search_dir = search_dir
     with open(ASSEMBLY_SUMMARY_FP) as f:
         assemblies = RefseqAssembly.load(f)
-    db = Refseq16SDatabase(TEST_FASTA, TEST_ACCESSIONS)
+    db = Refseq16SDatabase()
     db.load(assemblies)
     hits = db.search_seq("lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)
@@ -30,7 +31,7 @@ def test_exhaustive_search(tmpdir):
     Refseq16SDatabase.search_dir = tmpdir
     with open(ASSEMBLY_SUMMARY_FP) as f:
         assemblies = RefseqAssembly.load(f)
-    db = Refseq16SDatabase(TEST_FASTA, TEST_ACCESSIONS)
+    db = Refseq16SDatabase()
     db.load(assemblies)
     hits = db.exhaustive_search(
         "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)

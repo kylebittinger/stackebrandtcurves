@@ -6,18 +6,17 @@ from .ani import AssemblyPair
 from .parse import parse_fasta, write_fasta
 
 class Refseq16SDatabase:
-    search_dir = "tmp_search"
-    subject_filename = "subject.fasta"
-    query_filename = "query.fasta"
-    hits_filename = "hits.txt"
-    previous_query_filename = "previous_query.fasta"
-    previous_hits_filename = "previous_hits.txt"
+    data_dir = "assembly_data"
 
-    def __init__(
-            self, fasta_fp="refseq_16S.fasta",
-            accession_fp="refseq_16S_accessions.txt"):
-        self.fasta_fp = fasta_fp
-        self.accession_fp = accession_fp
+    @property
+    def fasta_fp(self):
+        return os.path.join(self.data_dir, "refseq_16S.fasta")
+
+    @property
+    def accession_fp(self):
+        return os.path.join(self.data_dir, "refseq_16S_accessions.txt")
+
+    def __init__(self):
         self.seqs = {}
         self.assemblies = {}
         self.seqids_by_assembly = collections.defaultdict(list)
@@ -50,6 +49,8 @@ class Refseq16SDatabase:
                 self.seqs[seqid] = seq
 
     def save(self):
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
         with open(self.fasta_fp, "w") as f:
             write_fasta(f, self.seqs.items())
         with open(self.accession_fp, "w") as f:
@@ -95,9 +96,10 @@ class Refseq16SDatabase:
                         hit["qseqid"], hit["sseqid"])
 
     def get_temp_fp(self, filename):
-        if not os.path.exists(self.search_dir):
-            os.mkdir(self.search_dir)
-        return os.path.join(self.search_dir, filename)
+        search_dir = os.path.join(self.data_dir, "temp_search")
+        if not os.path.exists(search_dir):
+            os.makedirs(search_dir)
+        return os.path.join(search_dir, filename)
 
     def exhaustive_search(
             self, query_seqid, query_seq, min_pctid=90.0, threads=None):
@@ -111,7 +113,7 @@ class Refseq16SDatabase:
 
         for trial in range(10):
             print("Follow-up search, trial {0}".format(trial + 1))
-            subject_fp = self.get_temp_fp(self.subject_filename)
+            subject_fp = self.get_temp_fp("subject.fasta")
             seqs_to_write = (
                 (seq_id, seq) for seq_id, seq in self.seqs.items()
                 if seq_id not in already_found)
@@ -136,13 +138,13 @@ class Refseq16SDatabase:
         if subject_fp is None:
             subject_fp = self.fasta_fp
 
-        query_fp = self.get_temp_fp(self.query_filename)
-        previous_query_fp = self.get_temp_fp(self.previous_query_filename)
+        query_fp = self.get_temp_fp("query.fasta")
+        previous_query_fp = self.get_temp_fp("previous_query.fasta")
         if os.path.exists(query_fp):
             os.rename(query_fp, previous_query_fp)
 
-        hits_fp = self.get_temp_fp(self.hits_filename)
-        previous_hits_fp = self.get_temp_fp(self.previous_hits_filename)
+        hits_fp = self.get_temp_fp("hits.txt")
+        previous_hits_fp = self.get_temp_fp("previous_hits.txt")
         if os.path.exists(hits_fp):
             os.rename(hits_fp, previous_hits_fp)
 
