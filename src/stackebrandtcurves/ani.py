@@ -20,10 +20,7 @@ def remove_files(target_dir):
             os.remove(os.path.join(target_dir, filename))
 
 class AssemblyPair:
-    genome_dir = "temp_genomes"
-    ani_dir = "temp_ani"
-    cache_dir = "temp_genomes_cache"
-    ani_cache = {}
+    data_dir = "assembly_data"
 
     def __init__(
             self, query, subject, pctid=None,
@@ -34,6 +31,7 @@ class AssemblyPair:
         self.ani = None
         self.query_seqid = query_seqid
         self.subject_seqid = subject_seqid
+        self.ani_cache = {}
 
     def compute_ani(self):
         ani_key = (self.query.accession, self.subject.accession)
@@ -48,7 +46,9 @@ class AssemblyPair:
         print(
             "Computing ANI for", self.query.accession, "and",
             self.subject.accession)
-        ani_fp = "tmp_ani.txt"
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
+        ani_fp = os.path.join(self.data_dir, "temp_ani.txt")
         subprocess.check_call([
             "fastANI",
             "-q", self.query.genome_fp,

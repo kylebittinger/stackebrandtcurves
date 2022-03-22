@@ -2,6 +2,7 @@ import os
 
 from stackebrandtcurves.ssu import Refseq16SDatabase
 from stackebrandtcurves.assembly import RefseqAssembly
+from stackebrandtcurves.ani import AssemblyPair
 from stackebrandtcurves.command import main
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -10,6 +11,7 @@ EXPECTED_OUTPUT_FP = os.path.join(DATA_DIR, "muribaculum_output.txt")
 
 RefseqAssembly.data_dir = DATA_DIR
 Refseq16SDatabase.data_dir = DATA_DIR
+AssemblyPair.data_dir = DATA_DIR
 
 def test_main(tmp_path):
     observed_output_fp = tmp_path / "output.txt"
