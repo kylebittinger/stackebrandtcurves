@@ -35,6 +35,10 @@ def main(argv=None):
         help="Random number seed",
     )
     p.add_argument(
+        "--multi-stage-search", action="store_true",
+        help="Conduct exhaustive 16S search in several stages",
+    )
+    p.add_argument(
         "--assembly-summary",
         help="Assembly summary file (default: download from NCBI)",
     )
@@ -73,10 +77,16 @@ def main(argv=None):
     query_seqid = query_assembly_seqids[0]
     query_seq = db.seqs[query_seqid]
 
-    assembly_pairs = db.exhaustive_search(
-        query_seqid, query_seq,
-        min_pctid=args.min_pctid,
-        threads=args.num_threads)
+    if args.multi_stage_search:
+        assembly_pairs = db.exhaustive_search(
+            query_seqid, query_seq,
+            min_pctid=args.min_pctid,
+            threads=args.num_threads)
+    else:
+        assembly_pairs = db.search_seq(
+            query_seqid, query_seq,
+            min_pctid=args.min_pctid,
+            threads=args.num_threads)
     assembly_pairs = list(assembly_pairs)
     if args.max_unique_pctid:
         pairs_by_pctid = collections.defaultdict(list)
