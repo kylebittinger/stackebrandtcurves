@@ -42,29 +42,8 @@ class AssemblyPair:
             self.ani = self.ani_cache[ani_key]
             return
 
-        if not os.path.exists(self.cache_dir):
-            os.mkdir(self.cache_dir)
-
-        remove_files(self.genome_dir)
-        
-        query_fname = "{0}.fna.gz".format(self.query.accession)
-        query_genome_fp = os.path.join(self.genome_dir, query_fname)
-        query_cache_fp = os.path.join(self.cache_dir, query_fname)
-        if os.path.exists(query_cache_fp):
-            os.rename(query_cache_fp, query_genome_fp)
-        else:    
-            self.query.download_genome(self.genome_dir, query_fname)
-            shutil.copy(query_genome_fp, query_cache_fp)
-        subprocess.check_call(["gunzip", "-f", query_genome_fp])
-        if query_genome_fp.endswith(".gz"):
-            query_genome_fp = query_genome_fp[:-3]
-
-        subject_fname = "{0}.fna.gz".format(self.subject.accession)
-        subject_genome_fp = os.path.join(self.genome_dir, subject_fname)
-        self.subject.download_genome(self.genome_dir, subject_fname)
-        subprocess.check_call(["gunzip", "-f", subject_genome_fp])
-        if subject_genome_fp.endswith(".gz"):
-            subject_genome_fp = subject_genome_fp[:-3]
+        self.query.download_genome()
+        self.subject.download_genome()
 
         print(
             "Computing ANI for", self.query.accession, "and",
@@ -72,8 +51,8 @@ class AssemblyPair:
         ani_fp = "tmp_ani.txt"
         subprocess.check_call([
             "fastANI",
-            "-q", query_genome_fp,
-            "-r", subject_genome_fp,
+            "-q", self.query.genome_fp,
+            "-r", self.subject.genome_fp,
             "-o", ani_fp,
         ])
 

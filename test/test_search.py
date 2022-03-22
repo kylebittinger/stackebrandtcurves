@@ -9,8 +9,7 @@ ASSEMBLY_SUMMARY_FP = os.path.join(DATA_DIR, "muribaculum_assembly_summary.txt")
 TEST_FASTA = os.path.join(DATA_DIR, "muribaculum.fasta")
 TEST_ACCESSIONS = os.path.join(DATA_DIR, "muribaculum_accessions.txt")
 
-RefseqAssembly.rna_dir = DATA_DIR
-RefseqAssembly.genome_dir = DATA_DIR
+RefseqAssembly.data_dir = DATA_DIR
 
 MockAssembly = collections.namedtuple("Assembly", ["accession", "ssu_seqs"])
 

@@ -14,8 +14,7 @@ class RefseqAssembly:
     genome or gene sequences for the assembly.
     """
     summary_fp = "refseq_bacteria_assembly_summary.txt"
-    genome_dir = "genome_fasta"
-    rna_dir = "rna_fasta"
+    data_dir = "assembly_data"
 
     summary_url = (
         "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/"
@@ -83,6 +82,10 @@ class RefseqAssembly:
         return os.path.basename(self.ftp_path)
 
     @property
+    def rna_dir(self):
+        return os.path.join(self.data_dir, "rna_fasta")
+
+    @property
     def rna_url(self):
         return "{0}/{1}_rna_from_genomic.fna.gz".format(
             self.base_url, self.basename)
@@ -96,10 +99,14 @@ class RefseqAssembly:
         if os.path.exists(self.rna_fp):
             return
         if not os.path.exists(self.rna_dir):
-            os.mkdir(self.rna_dir)
+            os.makedirs(self.rna_dir)
         print("Downloading 16S seqs for ", self.accession)
         get_url(self.rna_url, self.rna_fp + ".gz")
         subprocess.check_call(["gunzip", "-q", self.rna_fp + ".gz"])
+
+    @property
+    def genome_dir(self):
+        return os.path.join(self.data_dir, "genome_fasta")
 
     @property
     def genome_url(self):
@@ -108,22 +115,16 @@ class RefseqAssembly:
 
     @property
     def genome_fp(self):
-        genome_filename = "{0}_genomic.fna.gz".format(
-            self.basename)
+        genome_filename = "{0}_genomic.fna".format(self.basename)
         return os.path.join(self.genome_dir, genome_filename)
 
-    def download_genome(self, genome_dir=None, genome_fname=None):
-        if genome_dir is None:
-            genome_dir = self.genome_dir
-        if genome_fname is None:
-            genome_fp = self.genome_fp
-        else:
-            genome_fp = os.path.join(genome_dir, genome_fname)
-        if os.path.exists(genome_fp):
+    def download_genome(self):
+        if os.path.exists(self.genome_fp):
             return
-        if not os.path.exists(genome_dir):
-            os.mkdir(genome_dir)
-        get_url(self.genome_url, genome_fp)
+        if not os.path.exists(self.genome_dir):
+            os.makedirs(self.genome_dir)
+        get_url(self.genome_url, self.genome_fp + ".gz")
+        subprocess.check_call(["gunzip", "-q", self.genome_fp + ".gz"])
 
 
 def is_16S(desc):
