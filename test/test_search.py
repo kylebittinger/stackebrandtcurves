@@ -1,6 +1,7 @@
 import collections
 import os
 
+from stackebrandtcurves.refseq import RefSeq
 from stackebrandtcurves.ssu import Refseq16SDatabase
 from stackebrandtcurves.assembly import RefseqAssembly
 
@@ -21,27 +22,30 @@ class MockRefSeq:
         ]
 
 def test_search_seq():
-    db = Refseq16SDatabase(MockRefSeq())
-    with open(ASSEMBLY_SUMMARY_FP) as f:
-        assemblies = RefseqAssembly.parse(f)
-        db.load({a.accession: a for a in assemblies})
-    hits = db.search_seq("lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
+    refseq = RefSeq(DATA_DIR)
+    refseq.load_assemblies()
+    refseq.load_seqs()
+    db = Refseq16SDatabase(refseq)
+    hits = db.search_seq(
+        "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)
-    assert len(hits) == 13
+    assert len(hits) == 11
+    for hit in hits:
+        print(hit.subject.accession)
     last_hit = hits[-1]
-    assert last_hit.subject.accession == "GCF_004792675.1"
+    assert last_hit.subject.accession == "GCF_016696845.1"
 
 def test_exhaustive_search():
-    db = Refseq16SDatabase(MockRefSeq())
-    with open(ASSEMBLY_SUMMARY_FP) as f:
-        assemblies = RefseqAssembly.parse(f)
-        db.load({a.accession: a for a in assemblies})
+    refseq = RefSeq(DATA_DIR)
+    refseq.load_assemblies()
+    refseq.load_seqs()
+    db = Refseq16SDatabase(refseq)
     hits = db.exhaustive_search(
         "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)
-    assert len(hits) == 13
+    assert len(hits) == 11
     last_hit = hits[-1]
-    assert last_hit.subject.accession == "GCF_004792675.1"
+    assert last_hit.subject.accession == "GCF_016696845.1"
 
 def test_add_assembly():
     a = MockAssembly("GCF_001688845.2", None)
@@ -56,7 +60,6 @@ def test_add_assembly():
     assert "seq2" not in db.seqs
     assert db.seqs["seq3"] == "TGCTCAGTCGT"
 
-    assert db.seqids_by_assembly["GCF_001688845.2"] == ["seq1", "seq3"]
 
 
 TEST_SEQ = (

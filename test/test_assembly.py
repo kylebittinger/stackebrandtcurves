@@ -1,11 +1,10 @@
 import collections
 import os
 
-from stackebrandtcurves.refseq import RefSeq
+from stackebrandtcurves.refseq import RefSeq, parse_desc
 from stackebrandtcurves.assembly import RefseqAssembly
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-ASSEMBLY_SUMMARY_FP = os.path.join(DATA_DIR, "muribaculum_assembly_summary.txt")
 
 MockAssembly = collections.namedtuple(
     "Assembly", ["accession", "basename", "genome_url"])
@@ -16,11 +15,27 @@ a = MockAssembly(
     "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/688/845/GCF_001688845.2_ASM168884v2",
 )
 
-def test_parse():
-    with open(ASSEMBLY_SUMMARY_FP) as f:
-        assemblies = list(RefseqAssembly.parse(f))
-    a = assemblies[0]
+def test_parse_desc():
+    accession, attrs = parse_desc(
+        "lcl|NZ_VSMC01000076.1_rrna_55 [locus_tag=FW767_RS13005] "
+        "[db_xref=RFAM:RF00177] [product=16S ribosomal RNA] "
+        "[location=complement(482..>596)] [gbkey=rRNA]")
+    assert accession == "lcl|NZ_VSMC01000076.1_rrna_55"
+    assert attrs == {
+        "locus_tag": "FW767_RS13005",
+        "db_xref": "RFAM:RF00177",
+        "product": "16S ribosomal RNA",
+        "location": "complement(482..>596)",
+        "gbkey": "rRNA",
+    }
+
+def test_load():
+    db = RefSeq(DATA_DIR)
+    db.load_assemblies()
+    assert len(db.assemblies) == 21
+    a = db.assemblies["GCF_001688845.2"]
     assert a.accession == "GCF_001688845.2"
+    assert a.bioproject == "PRJNA224116"
 
 def test_ssu_seqs():
     db = RefSeq(DATA_DIR)
@@ -32,8 +47,8 @@ def test_ssu_seqs():
     seqs = list(seqs)
     assert len(seqs) == 4
 
-    desc, seq = seqs[0]
-    assert desc.startswith("lcl|NZ_CP015402.2_rrna_41 ")
+    seqid, seq = seqs[0]
+    assert seqid == "lcl|NZ_CP015402.2_rrna_41"
     assert seq.startswith("ACAACGAAGAGTTTGATCCTGGCTCAGGATGAACGCTAGCGACAGG")
 
 def test_download_genome():

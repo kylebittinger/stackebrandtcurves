@@ -5,7 +5,6 @@ from stackebrandtcurves.assembly import RefseqAssembly
 from stackebrandtcurves.command import main
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-ASSEMBLY_SUMMARY_FP = os.path.join(DATA_DIR, "muribaculum_assembly_summary.txt")
 EXPECTED_OUTPUT_FP = os.path.join(DATA_DIR, "muribaculum_output.txt")
 
 def test_main(tmp_path):
@@ -13,7 +12,6 @@ def test_main(tmp_path):
     args = [
         "GCF_001688845.2",
         "--output-file", str(observed_output_fp),
-        "--assembly-summary", ASSEMBLY_SUMMARY_FP,
         "--data-dir", DATA_DIR,
     ]
     main(args)

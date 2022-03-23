@@ -41,10 +41,6 @@ def main(argv=None):
         help="Conduct exhaustive 16S search in several stages",
     )
     p.add_argument(
-        "--assembly-summary",
-        help="Assembly summary file (default: download from NCBI)",
-    )
-    p.add_argument(
         "--data-dir", default="refseq_data",
         help="Data directory (default: refseq_data)",
     )
@@ -62,28 +58,15 @@ def main(argv=None):
     random.seed(args.seed)
 
     refseq = RefSeq(args.data_dir)
+    refseq.load_assemblies()
+    refseq.load_seqs()
+    refseq.save_seqs()
+
     db = Refseq16SDatabase(refseq)
     ani_app = AniApplication(refseq)
 
-    if args.assembly_summary:
-        assembly_summary_fp = args.assembly_summary
-    else:
-        assembly_summary_fp = refseq.download_summary()
-
-    with open(assembly_summary_fp, "r") as f:
-        assemblies = {a.accession: a for a in RefseqAssembly.parse(f)}
-
-    if os.path.exists(db.accession_fp):
-        db.load(assemblies)
-    else:
-        for assembly in assemblies.values():
-            db.add_assembly(assembly)
-        db.save()
-
-    query_assembly = assemblies[args.assembly_accession]
-    query_assembly_seqids = db.seqids_by_assembly[query_assembly.accession]
-    query_seqid = query_assembly_seqids[0]
-    query_seq = db.seqs[query_seqid]
+    query_seqs = refseq.assembly_seqs[args.assembly_accession]
+    query_seqid, query_seq = query_seqs[0]
 
     if args.multi_stage_search:
         assembly_pairs = db.exhaustive_search(

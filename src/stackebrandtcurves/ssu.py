@@ -10,7 +10,6 @@ class Refseq16SDatabase:
         self.data_dir = db.data_dir
         self.seqs = {}
         self.assemblies = {}
-        self.seqids_by_assembly = collections.defaultdict(list)
 
     @property
     def fasta_fp(self):
@@ -31,7 +30,6 @@ class Refseq16SDatabase:
                 seqid = desc.split()[0]
                 self.assemblies[seqid] = assembly
                 self.seqs[seqid] = seq
-                self.seqids_by_assembly[assembly.accession].append(seqid)
                 seen.add(seq)
 
     def load(self, assembly_dict):
@@ -42,7 +40,6 @@ class Refseq16SDatabase:
                 accession = toks[1]
                 assembly = assembly_dict[accession]
                 self.assemblies[seqid] = assembly
-                self.seqids_by_assembly[assembly.accession].append(seqid)
         with open(self.fasta_fp, "r") as f:
             for seqid, seq in parse_fasta(f):
                 self.seqs[seqid] = seq
@@ -62,8 +59,8 @@ class Refseq16SDatabase:
             aligner.search(min_pctid=min_pctid, threads=threads)
         with open(aligner.hits_fp) as f:
             for hit in aligner.parse(f):
-                query = self.assemblies[hit["qseqid"]]
-                subject = self.assemblies[hit["sseqid"]]
+                query = self.db.seqid_assemblies(hit["qseqid"])
+                subject = self.db.seqid_assemblies(hit["sseqid"])
                 pctid = hit["pident"]
                 yield AssemblyPair(query, subject, pctid)
 
@@ -87,8 +84,8 @@ class Refseq16SDatabase:
             hits = aligner.parse(f)
             for hit in hits:
                 if hit["pident"] == pctid_str:
-                    query = self.assemblies[hit["qseqid"]]
-                    subject = self.assemblies[hit["sseqid"]]
+                    query = self.db.seqid_assemblies[hit["qseqid"]]
+                    subject = self.db.seqid_assemblies[hit["sseqid"]]
                     pctid = hit["pident"]
                     yield AssemblyPair(
                         query, subject, pctid,
@@ -112,14 +109,11 @@ class Refseq16SDatabase:
 
         for trial in range(10):
             print("Follow-up search, trial {0}".format(trial + 1))
-            subject_fp = self.get_temp_fp("subject.fasta")
-            seqs_to_write = (
-                (seq_id, seq) for seq_id, seq in self.seqs.items()
-                if seq_id not in already_found)
-            with open(subject_fp, "w") as f:
-                write_fasta(f, seqs_to_write)
+            filtered_subject_fp = self.get_temp_fp("filtered_subject.fasta")
+            self.db.save_filtered_seqs(filtered_subject_fp, already_found)
             hits = self.search_seq(
-                query_seqid, query_seq, min_pctid, threads, subject_fp)
+                query_seqid, query_seq, min_pctid, threads,
+                filtered_subject_fp)
             n_hits = 0
             for hit in hits:
                 n_hits += 1
@@ -157,8 +151,8 @@ class Refseq16SDatabase:
         with open(hits_fp) as f:
             hits = aligner.parse(f)
             for hit in hits:
-                query = self.assemblies[hit["qseqid"]]
-                subject = self.assemblies[hit["sseqid"]]
+                query = self.db.seqid_assemblies[hit["qseqid"]]
+                subject = self.db.seqid_assemblies[hit["sseqid"]]
                 pctid = hit["pident"]
                 if query.accession != subject.accession:
                     yield AssemblyPair(
