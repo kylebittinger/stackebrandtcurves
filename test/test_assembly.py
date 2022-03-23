@@ -2,6 +2,7 @@ import collections
 import os
 
 from stackebrandtcurves.refseq import RefSeq
+from stackebrandtcurves.assembly import RefseqAssembly
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 ASSEMBLY_SUMMARY_FP = os.path.join(DATA_DIR, "muribaculum_assembly_summary.txt")
@@ -14,6 +15,12 @@ a = MockAssembly(
     "GCF_001688845.2_ASM168884v2",
     "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/688/845/GCF_001688845.2_ASM168884v2",
 )
+
+def test_parse():
+    with open(ASSEMBLY_SUMMARY_FP) as f:
+        assemblies = list(RefseqAssembly.parse(f))
+    a = assemblies[0]
+    assert a.accession == "GCF_001688845.2"
 
 def test_ssu_seqs():
     db = RefSeq(DATA_DIR)

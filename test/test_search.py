@@ -9,17 +9,21 @@ ASSEMBLY_SUMMARY_FP = os.path.join(DATA_DIR, "muribaculum_assembly_summary.txt")
 TEST_FASTA = os.path.join(DATA_DIR, "muribaculum.fasta")
 TEST_ACCESSIONS = os.path.join(DATA_DIR, "muribaculum_accessions.txt")
 
-RefseqAssembly.data_dir = DATA_DIR
-Refseq16SDatabase.data_dir = DATA_DIR
-
 MockAssembly = collections.namedtuple("Assembly", ["accession", "ssu_seqs"])
 
-def test_search_seq(tmpdir):
-    search_dir = os.path.join(tmpdir, "search_xyz")
-    Refseq16SDatabase.search_dir = search_dir
-    db = Refseq16SDatabase()
+class MockRefSeq:
+    data_dir = DATA_DIR
+    def get_16S_seqs(self, assembly):
+        return [
+            ("seq1", "GCTCGCATCGAT"),
+            ("seq2", "GCTCGCATCGAT"), # duplicate, will not be added
+            ("seq3", "TGCTCAGTCGT"),
+        ]
+
+def test_search_seq():
+    db = Refseq16SDatabase(MockRefSeq())
     with open(ASSEMBLY_SUMMARY_FP) as f:
-        assemblies = RefseqAssembly.parse_summary(f)
+        assemblies = RefseqAssembly.parse(f)
         db.load({a.accession: a for a in assemblies})
     hits = db.search_seq("lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)
@@ -27,11 +31,10 @@ def test_search_seq(tmpdir):
     last_hit = hits[-1]
     assert last_hit.subject.accession == "GCF_004792675.1"
 
-def test_exhaustive_search(tmpdir):
-    Refseq16SDatabase.search_dir = tmpdir
-    db = Refseq16SDatabase()
+def test_exhaustive_search():
+    db = Refseq16SDatabase(MockRefSeq())
     with open(ASSEMBLY_SUMMARY_FP) as f:
-        assemblies = RefseqAssembly.parse_summary(f)
+        assemblies = RefseqAssembly.parse(f)
         db.load({a.accession: a for a in assemblies})
     hits = db.exhaustive_search(
         "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
@@ -41,13 +44,8 @@ def test_exhaustive_search(tmpdir):
     assert last_hit.subject.accession == "GCF_004792675.1"
 
 def test_add_assembly():
-    a_seqs = [
-        ("seq1", "GCTCGCATCGAT"),
-        ("seq2", "GCTCGCATCGAT"), # duplicate, will not be added
-        ("seq3", "TGCTCAGTCGT"),
-    ]
-    a = MockAssembly("GCF_001688845.2", a_seqs)
-    db = Refseq16SDatabase()
+    a = MockAssembly("GCF_001688845.2", None)
+    db = Refseq16SDatabase(MockRefSeq())
     db.add_assembly(a)
 
     assert db.assemblies["seq1"] == a

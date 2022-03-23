@@ -4,7 +4,7 @@ import subprocess
 import urllib
 
 from .download import get_url
-from .parse import parse_fasta
+from .parse import parse_assembly_summary
 
 
 class RefseqAssembly:
@@ -14,64 +14,21 @@ class RefseqAssembly:
     genome or gene sequences for the assembly.
     """
     summary_fp = "refseq_bacteria_assembly_summary.txt"
-    data_dir = "assembly_data"
 
     summary_url = (
         "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/"
         "bacteria/assembly_summary.txt"
         )
-    summary_cols = [
-        "assembly_accession", "bioproject", "biosample", "wgs_master",
-        "refseq_category", "taxid", "species_taxid", "organism_name",
-        "infraspecific_name", "isolate", "version_status",
-        "assembly_level", "release_type", "genome_rep", "seq_rel_date",
-        "asm_name", "submitter", "gbrs_paired_asm", "paired_asm_comp",
-        "ftp_path", "excluded_from_refseq", "relation_to_type_material"
-    ]
-
     def __init__(self, assembly_accession, ftp_path, **kwargs):
         self.accession = assembly_accession
         self.ftp_path = ftp_path
         for key, val in kwargs.items():
             setattr(self, key, val)
-        self._ssu_seqs = None
 
     @classmethod
-    def download_summary(cls, fp):
-        get_url(cls.summary_url, fp)
-
-    @classmethod
-    def load(cls, f):
-        return {a.accession: a for a in cls.parse_summary(f)}
-
-    @classmethod
-    def parse_summary(cls, f):
-        for line in f:
-            line = line.rstrip("\n")
-            if line.startswith("#") or (line == ""):
-                continue
-            toks = line.split("\t")
-            vals = dict(zip(cls.summary_cols, toks))
-            if vals["ftp_path"] == "na":
-                continue
-            yield cls(**vals)
-
-    @property
-    def ssu_seqs(self):
-        if self._ssu_seqs is not None:
-            return self._ssu_seqs
-        if not os.path.exists(self.rna_fp):
-            try:
-                self.download_rna()
-            except urllib.error.HTTPError as e:
-                print(self.accession)
-                print(e)
-                return []
-        with open(self.rna_fp, "rt") as f:
-            seqs = list(parse_fasta(f))
-        res = [(desc, seq) for (desc, seq) in seqs if is_16S(desc)]
-        self._ssu_seqs = res
-        return res
+    def parse(cls, f):
+        for rec in parse_assembly_summary(f):
+            yield cls(**rec)
 
     @property
     def base_url(self):
@@ -82,51 +39,11 @@ class RefseqAssembly:
         return os.path.basename(self.ftp_path)
 
     @property
-    def rna_dir(self):
-        return os.path.join(self.data_dir, "rna_fasta")
-
-    @property
     def rna_url(self):
         return "{0}/{1}_rna_from_genomic.fna.gz".format(
             self.base_url, self.basename)
 
     @property
-    def rna_fp(self):
-        rna_filename = "{0}_rna_from_genomic.fna".format(self.basename)
-        return os.path.join(self.rna_dir, rna_filename)
-
-    def download_rna(self):
-        if os.path.exists(self.rna_fp):
-            return
-        if not os.path.exists(self.rna_dir):
-            os.makedirs(self.rna_dir)
-        print("Downloading 16S seqs for ", self.accession)
-        get_url(self.rna_url, self.rna_fp + ".gz")
-        subprocess.check_call(["gunzip", "-q", self.rna_fp + ".gz"])
-
-    @property
-    def genome_dir(self):
-        return os.path.join(self.data_dir, "genome_fasta")
-
-    @property
     def genome_url(self):
         return "{0}/{1}_genomic.fna.gz".format(
             self.base_url, self.basename)
-
-    @property
-    def genome_fp(self):
-        genome_filename = "{0}_genomic.fna".format(self.basename)
-        return os.path.join(self.genome_dir, genome_filename)
-
-    def download_genome(self):
-        if os.path.exists(self.genome_fp):
-            return
-        if not os.path.exists(self.genome_dir):
-            os.makedirs(self.genome_dir)
-        get_url(self.genome_url, self.genome_fp + ".gz")
-        subprocess.check_call(["gunzip", "-q", self.genome_fp + ".gz"])
-
-
-def is_16S(desc):
-    return "product=16S ribosomal RNA" in desc
-

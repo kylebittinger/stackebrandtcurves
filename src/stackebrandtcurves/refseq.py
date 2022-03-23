@@ -10,14 +10,6 @@ class RefSeq:
         "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/"
         "bacteria/assembly_summary.txt"
         )
-    summary_cols = [
-        "assembly_accession", "bioproject", "biosample", "wgs_master",
-        "refseq_category", "taxid", "species_taxid", "organism_name",
-        "infraspecific_name", "isolate", "version_status",
-        "assembly_level", "release_type", "genome_rep", "seq_rel_date",
-        "asm_name", "submitter", "gbrs_paired_asm", "paired_asm_comp",
-        "ftp_path", "excluded_from_refseq", "relation_to_type_material"
-    ]
 
     def __init__(self, data_dir="refseq_data"):
         self.data_dir = data_dir
@@ -72,9 +64,9 @@ class RefSeq:
             return rna_fp
         if not os.path.exists(self.rna_dir):
             os.makedirs(self.rna_dir)
-        print("Downloading 16S seqs for ", self.accession)
+        print("Downloading 16S seqs for ", assembly.accession)
         get_url(assembly.rna_url, rna_fp + ".gz")
-        subprocess.check_call(["gunzip", "-q", self.rna_fp + ".gz"])
+        subprocess.check_call(["gunzip", "-q", rna_fp + ".gz"])
         return rna_fp
 
     def get_16S_seqs(self, assembly):

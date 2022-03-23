@@ -7,6 +7,7 @@ import random
 from .refseq import RefSeq
 from .assembly import RefseqAssembly
 from .ssu import Refseq16SDatabase
+from .ani import AniApplication
 
 def main(argv=None):
     p = argparse.ArgumentParser()
@@ -61,7 +62,8 @@ def main(argv=None):
     random.seed(args.seed)
 
     refseq = RefSeq(args.data_dir)
-    db = Refseq16SDatabase()
+    db = Refseq16SDatabase(refseq)
+    ani_app = AniApplication(refseq)
 
     if args.assembly_summary:
         assembly_summary_fp = args.assembly_summary
@@ -69,8 +71,7 @@ def main(argv=None):
         assembly_summary_fp = refseq.download_summary()
 
     with open(assembly_summary_fp, "r") as f:
-        assemblies = {
-            a.accession: a for a in RefseqAssembly.parse_summary(f)}
+        assemblies = {a.accession: a for a in RefseqAssembly.parse(f)}
 
     if os.path.exists(db.accession_fp):
         db.load(assemblies)
@@ -106,7 +107,8 @@ def main(argv=None):
     
     for assembly_pair in assembly_pairs:
         try:
-            assembly_pair.compute_ani()
+            assembly_pair.ani = ani_app.compute_ani(
+                assembly_pair.query, assembly_pair.subject)
             output_file.write(assembly_pair.format_output())
             output_file.flush()
         except Exception as e:

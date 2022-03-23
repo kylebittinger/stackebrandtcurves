@@ -2,11 +2,15 @@ import collections
 import os
 import subprocess
 
-from .ani import AssemblyPair
 from .parse import parse_fasta, write_fasta
 
 class Refseq16SDatabase:
-    data_dir = "assembly_data"
+    def __init__(self, db):
+        self.db = db
+        self.data_dir = db.data_dir
+        self.seqs = {}
+        self.assemblies = {}
+        self.seqids_by_assembly = collections.defaultdict(list)
 
     @property
     def fasta_fp(self):
@@ -16,13 +20,8 @@ class Refseq16SDatabase:
     def accession_fp(self):
         return os.path.join(self.data_dir, "refseq_16S_accessions.txt")
 
-    def __init__(self):
-        self.seqs = {}
-        self.assemblies = {}
-        self.seqids_by_assembly = collections.defaultdict(list)
-
     def add_assembly(self, assembly):
-        seqs = list(assembly.ssu_seqs)
+        seqs = self.db.get_16S_seqs(assembly)
 
         # Avoid writing duplicate sequences for the same genome
         seen = set()
@@ -228,3 +227,23 @@ class PctidAligner:
             hit = dict(zip(self.field_names, vals))
             if hit["qseqid"] != hit["sseqid"]:
                 yield hit
+
+class AssemblyPair:
+    def __init__(
+            self, query, subject, pctid=None,
+            query_seqid=None, subject_seqid=None):
+        self.query = query
+        self.subject = subject
+        self.pctid = pctid
+        self.ani = None
+        self.query_seqid = query_seqid
+        self.subject_seqid = subject_seqid
+
+    def format_output(self):
+        pctid_format = round(float(self.pctid), 1)
+        return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(
+            self.query.accession, self.subject.accession,
+            self.query_seqid, self.subject_seqid,
+            pctid_format, self.ani["ani"],
+            self.ani["fragments_aligned"], self.ani["fragments_total"],
+        )

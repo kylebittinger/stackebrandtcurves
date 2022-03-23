@@ -1,5 +1,35 @@
 from io import StringIO
 
+ANI_FIELDS = [
+    "query_fp", "ref_fp", "ani", "fragments_aligned", "fragments_total"]
+ANI_TYPES = [str, str, float, int, int]
+
+def parse_pairwise_ani(f):
+    for line in f:
+        toks = line.strip().split()
+        vals = [fcn(tok) for tok, fcn in zip(toks, ANI_TYPES)]
+        yield dict(zip(ANI_FIELDS, vals))
+
+ASSEMBLY_SUMMARY_COLS = [
+    "assembly_accession", "bioproject", "biosample", "wgs_master",
+    "refseq_category", "taxid", "species_taxid", "organism_name",
+    "infraspecific_name", "isolate", "version_status",
+    "assembly_level", "release_type", "genome_rep", "seq_rel_date",
+    "asm_name", "submitter", "gbrs_paired_asm", "paired_asm_comp",
+    "ftp_path", "excluded_from_refseq", "relation_to_type_material"
+]
+
+def parse_assembly_summary(f):
+    for line in f:
+        line = line.rstrip("\n")
+        if line.startswith("#") or (line == ""):
+            continue
+        toks = line.split("\t")
+        vals = dict(zip(ASSEMBLY_SUMMARY_COLS, toks))
+        if vals["ftp_path"] == "na":
+            continue
+        yield vals
+
 def parse_species_names(f):
     for desc, seq in parse_fasta(f):
         vals = desc.split("\t", maxsplit=1)
