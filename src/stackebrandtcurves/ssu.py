@@ -23,7 +23,7 @@ class SearchApplication:
                 query = self.db.seqid_assemblies(hit["qseqid"])
                 subject = self.db.seqid_assemblies(hit["sseqid"])
                 pctid = hit["pident"]
-                yield AssemblyPair(query, subject, pctid)
+                yield SearchResult(query, subject, pctid)
 
     def search_one(self, query_seqid, pctid, threads=None):
         pctid_str = "{:.1f}".format(pctid)
@@ -48,7 +48,7 @@ class SearchApplication:
                     query = self.db.seqid_assemblies[hit["qseqid"]]
                     subject = self.db.seqid_assemblies[hit["sseqid"]]
                     pctid = hit["pident"]
-                    yield AssemblyPair(
+                    yield SearchResult(
                         query, subject, pctid,
                         hit["qseqid"], hit["sseqid"])
 
@@ -103,8 +103,7 @@ class SearchApplication:
             write_fasta(f, [(query_seqid, query_seq)])
         aligner = PctidAligner(subject_fp)
         aligner.search(
-            query_fp, hits_fp, min_pctid=min_pctid,
-            threads=threads)
+            query_fp, hits_fp, min_pctid=min_pctid, threads=threads)
 
         with open(hits_fp) as f:
             hits = aligner.parse(f)
@@ -113,7 +112,7 @@ class SearchApplication:
                 subject = self.db.seqid_assemblies[hit["sseqid"]]
                 pctid = hit["pident"]
                 if query.accession != subject.accession:
-                    yield AssemblyPair(
+                    yield SearchResult(
                         query, subject, pctid,
                         hit["qseqid"], hit["sseqid"])
         if subject_fp is not None:
@@ -180,7 +179,7 @@ class PctidAligner:
             if hit["qseqid"] != hit["sseqid"]:
                 yield hit
 
-class AssemblyPair:
+class SearchResult:
     def __init__(
             self, query, subject, pctid=None,
             query_seqid=None, subject_seqid=None):
