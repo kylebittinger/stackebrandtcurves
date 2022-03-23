@@ -6,7 +6,7 @@ import random
 
 from .refseq import RefSeq
 from .assembly import RefseqAssembly
-from .ssu import Refseq16SDatabase
+from .ssu import SearchApplication
 from .ani import AniApplication
 
 def main(argv=None):
@@ -62,7 +62,7 @@ def main(argv=None):
     refseq.load_seqs()
     refseq.save_seqs()
 
-    db = Refseq16SDatabase(refseq)
+    db = SearchApplication(refseq)
     ani_app = AniApplication(refseq)
 
     query_seqs = refseq.assembly_seqs[args.assembly_accession]

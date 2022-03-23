@@ -2,7 +2,7 @@ import collections
 import os
 
 from stackebrandtcurves.refseq import RefSeq
-from stackebrandtcurves.ssu import Refseq16SDatabase
+from stackebrandtcurves.ssu import SearchApplication
 from stackebrandtcurves.assembly import RefseqAssembly
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -25,7 +25,7 @@ def test_search_seq():
     refseq = RefSeq(DATA_DIR)
     refseq.load_assemblies()
     refseq.load_seqs()
-    db = Refseq16SDatabase(refseq)
+    db = SearchApplication(refseq)
     hits = db.search_seq(
         "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)
@@ -39,7 +39,7 @@ def test_exhaustive_search():
     refseq = RefSeq(DATA_DIR)
     refseq.load_assemblies()
     refseq.load_seqs()
-    db = Refseq16SDatabase(refseq)
+    db = SearchApplication(refseq)
     hits = db.exhaustive_search(
         "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)

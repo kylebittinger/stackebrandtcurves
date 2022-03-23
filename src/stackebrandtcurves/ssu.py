@@ -4,7 +4,7 @@ import subprocess
 
 from .parse import parse_fasta, write_fasta
 
-class Refseq16SDatabase:
+class SearchApplication:
     def __init__(self, db):
         self.db = db
         self.data_dir = db.data_dir
