@@ -17,6 +17,8 @@ class AniApplication:
         self.db = db
         self.ani_cache = {}
         if work_dir is not None:
+            if not os.path.exists(work_dir):
+                os.makedirs(work_dir)
             self.work_dir = work_dir
         else:
             self._work_dir_obj = tempfile.TemporaryDirectory()

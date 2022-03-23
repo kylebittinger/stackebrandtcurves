@@ -9,6 +9,8 @@ class SearchApplication:
     def __init__(self, db, work_dir=None):
         self.db = db
         if work_dir is not None:
+            if not os.path.exists(work_dir):
+                os.makedirs(work_dir)
             self.work_dir = work_dir
         else:
             self._work_dir_obj = tempfile.TemporaryDirectory()
@@ -100,7 +102,7 @@ class SearchApplication:
             os.rename(hits_fp, previous_hits_fp)
 
         with open(query_fp, "w") as f:
-            write_fasta(f, [(query_seqid, query_seq)])
+            f.write(">{0}\n{1}\n".format(query_seqid, query_seq))
         aligner = PctidAligner(subject_fp)
         aligner.search(
             query_fp, hits_fp, min_pctid=min_pctid, threads=threads)

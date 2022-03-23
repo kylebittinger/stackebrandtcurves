@@ -41,6 +41,14 @@ def main(argv=None):
         help="Conduct exhaustive 16S search in several stages",
     )
     p.add_argument(
+        "--search-dir",
+        help="Directory for search-related files (default: temp directory)",
+    )
+    p.add_argument(
+        "--ani-dir",
+        help="Directory for ANI-related files (default: temp directory)",
+    )
+    p.add_argument(
         "--data-dir", default="refseq_data",
         help="Data directory (default: refseq_data)",
     )
@@ -62,37 +70,40 @@ def main(argv=None):
     refseq.load_seqs()
     refseq.save_seqs()
 
-    db = SearchApplication(refseq)
-    ani_app = AniApplication(refseq)
+    search_app = SearchApplication(refseq, work_dir=args.search_dir)
+    ani_app = AniApplication(refseq, work_dir=args.ani_dir)
 
     query_seqs = refseq.assembly_seqs[args.assembly_accession]
     query_seqid, query_seq = query_seqs[0]
 
     if args.multi_stage_search:
-        assembly_pairs = db.exhaustive_search(
+        results = search_app.exhaustive_search(
             query_seqid, query_seq,
             min_pctid=args.min_pctid,
             threads=args.num_threads)
     else:
-        assembly_pairs = db.search_seq(
+        results = search_app.search_seq(
             query_seqid, query_seq,
             min_pctid=args.min_pctid,
             threads=args.num_threads)
-    assembly_pairs = list(assembly_pairs)
+    results = list(results)
     if args.max_unique_pctid:
-        pairs_by_pctid = collections.defaultdict(list)
-        for pair in assembly_pairs:
-            pairs_by_pctid[pair.pctid].append(pair)
-        for pctid, pairs in pairs_by_pctid.items():
-            if len(pairs) > args.max_unique_pctid:
-                pairs_by_pctid[pctid] = random.sample(pairs, k=args.max_unique_pctid)
-        assembly_pairs = list(itertools.chain.from_iterable(pairs_by_pctid.values()))
-    
-    for assembly_pair in assembly_pairs:
+        results = list(limit_results(results, args.max_unique_pctid))
+
+    for result in results:
         try:
-            assembly_pair.ani = ani_app.compute_ani(
-                assembly_pair.query, assembly_pair.subject)
-            output_file.write(assembly_pair.format_output())
+            result.ani = ani_app.compute_ani(result.query, result.subject)
+            output_file.write(result.format_output())
             output_file.flush()
         except Exception as e:
             print(e)
+
+def limit_results(results, max_results_pctid=None):
+    by_pctid = collections.defaultdict(list)
+    for result in results:
+        by_pctid[result.pctid].append(result)
+    for pctid, pctid_results in by_pctid.items():
+        if len(pctid_results) > max_results_pctid:
+            pctid_results = random.sample(pctid_results, k=max_results_pctid)
+        for result in pctid_results:
+            yield result
