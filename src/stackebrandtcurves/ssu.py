@@ -6,11 +6,13 @@ import tempfile
 from .parse import parse_fasta, write_fasta
 
 class SearchApplication:
-    def __init__(self, db, search_dir=None):
+    def __init__(self, db, work_dir=None):
         self.db = db
-        self.data_dir = db.data_dir
-        if search_dir is None:
-            self.search_dir = tempfile.TemporaryDirectory()
+        if work_dir is not None:
+            self.work_dir = work_dir
+        else:
+            self._work_dir_obj = tempfile.TemporaryDirectory()
+            self.work_dir = self._work_dir_obj.name
 
     def compute_pctids(self, min_pctid=97.0, threads=None):
         aligner = PctidAligner(self.db.ssu_fasta_fp)
@@ -51,7 +53,7 @@ class SearchApplication:
                         hit["qseqid"], hit["sseqid"])
 
     def get_temp_fp(self, filename):
-        return os.path.join(self.search_dir.name, filename)
+        return os.path.join(self.work_dir, filename)
 
     def exhaustive_search(
             self, query_seqid, query_seq, min_pctid=90.0, threads=None):

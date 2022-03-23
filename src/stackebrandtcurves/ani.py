@@ -8,14 +8,19 @@ import re
 import shutil
 import subprocess
 import urllib.error
+import tempfile
 
 from .parse import parse_pairwise_ani
 
 class AniApplication:
-    def __init__(self, db):
+    def __init__(self, db, work_dir=None):
         self.db = db
-        self.data_dir = self.db.data_dir
         self.ani_cache = {}
+        if work_dir is not None:
+            self.work_dir = work_dir
+        else:
+            self._work_dir_obj = tempfile.TemporaryDirectory()
+            self.work_dir = self._work_dir_obj.name
 
     def compute_ani(self, query, subject):
         ani_key = (query.accession, subject.accession)
@@ -29,7 +34,7 @@ class AniApplication:
 
         print(
             "Computing ANI for", query.accession, "and", subject.accession)
-        ani_fp = os.path.join(self.data_dir, "temp_ani.txt")
+        ani_fp = os.path.join(self.work_dir, "temp_ani.txt")
         subprocess.check_call([
             "fastANI",
             "-q", query_fp,
