@@ -47,20 +47,6 @@ def test_exhaustive_search():
     last_hit = hits[-1]
     assert last_hit.subject.accession == "GCF_016696845.1"
 
-def test_add_assembly():
-    a = MockAssembly("GCF_001688845.2", None)
-    db = Refseq16SDatabase(MockRefSeq())
-    db.add_assembly(a)
-
-    assert db.assemblies["seq1"] == a
-    assert "seq2" not in db.assemblies
-    assert db.assemblies["seq3"] == a
-
-    assert db.seqs["seq1"] == "GCTCGCATCGAT"
-    assert "seq2" not in db.seqs
-    assert db.seqs["seq3"] == "TGCTCAGTCGT"
-
-
 
 TEST_SEQ = (
     "ACAACGAAGAGTTTGATCCTGGCTCAGGATGAACGCTAGCGACAGGCCTAACACATGCAAGTCGAGGGGCAGCGGGGAGC"

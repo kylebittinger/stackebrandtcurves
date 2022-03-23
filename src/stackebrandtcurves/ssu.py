@@ -8,53 +8,9 @@ class Refseq16SDatabase:
     def __init__(self, db):
         self.db = db
         self.data_dir = db.data_dir
-        self.seqs = {}
-        self.assemblies = {}
-
-    @property
-    def fasta_fp(self):
-        return os.path.join(self.data_dir, "refseq_16S.fasta")
-
-    @property
-    def accession_fp(self):
-        return os.path.join(self.data_dir, "refseq_16S_accessions.txt")
-
-    def add_assembly(self, assembly):
-        seqs = self.db.get_16S_seqs(assembly)
-
-        # Avoid writing duplicate sequences for the same genome
-        seen = set()
-        for desc, seq in seqs:
-            if seq not in seen:
-                print(desc)
-                seqid = desc.split()[0]
-                self.assemblies[seqid] = assembly
-                self.seqs[seqid] = seq
-                seen.add(seq)
-
-    def load(self, assembly_dict):
-        with open(self.accession_fp, "r") as f:
-            for line in f:
-                toks = line.strip().split()
-                seqid = toks[0]
-                accession = toks[1]
-                assembly = assembly_dict[accession]
-                self.assemblies[seqid] = assembly
-        with open(self.fasta_fp, "r") as f:
-            for seqid, seq in parse_fasta(f):
-                self.seqs[seqid] = seq
-
-    def save(self):
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir)
-        with open(self.fasta_fp, "w") as f:
-            write_fasta(f, self.seqs.items())
-        with open(self.accession_fp, "w") as f:
-            for seqid, assembly in self.assemblies.items():
-                f.write("{0}\t{1}\n".format(seqid, assembly.accession))
 
     def compute_pctids(self, min_pctid=97.0, threads=None):
-        aligner = PctidAligner(self.fasta_fp)
+        aligner = PctidAligner(self.db.ssu_fasta_fp)
         if not os.path.exists(aligner.hits_fp):
             aligner.search(min_pctid=min_pctid, threads=threads)
         with open(aligner.hits_fp) as f:
@@ -76,7 +32,7 @@ class Refseq16SDatabase:
             os.rename(query_hits_fp, "temp_prev_query_hits.txt")
         with open(query_fp, "w") as f:
             write_fasta(f, [(query_seqid, query_seq)])
-        aligner = PctidAligner(self.fasta_fp)
+        aligner = PctidAligner(self.db.ssu_fasta_fp)
         aligner.search(
             query_fp, query_hits_fp, min_pctid=pctid,
             threads=threads)
@@ -129,7 +85,7 @@ class Refseq16SDatabase:
             subject_fp=None):
 
         if subject_fp is None:
-            subject_fp = self.fasta_fp
+            subject_fp = self.db.ssu_fasta_fp
 
         query_fp = self.get_temp_fp("query.fasta")
         previous_query_fp = self.get_temp_fp("previous_query.fasta")
