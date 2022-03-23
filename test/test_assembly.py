@@ -1,44 +1,35 @@
+import collections
 import os
 
-from stackebrandtcurves.assembly import RefseqAssembly
+from stackebrandtcurves.refseq import RefSeq
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 ASSEMBLY_SUMMARY_FP = os.path.join(DATA_DIR, "muribaculum_assembly_summary.txt")
 
-RefseqAssembly.data_dir = DATA_DIR
+MockAssembly = collections.namedtuple(
+    "Assembly", ["accession", "basename", "genome_url"])
 
-def test_load_parse_summary():
-    with open(ASSEMBLY_SUMMARY_FP) as f:
-        assemblies = RefseqAssembly.load(f)
-    a = assemblies["GCF_001688845.2"]
-    assert a.accession == "GCF_001688845.2"
-    assert a.ftp_path == (
-        "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/688/845/"
-        "GCF_001688845.2_ASM168884v2")
-    assert a.taxid == "1796646"
+a = MockAssembly(
+    "GCF_001688845.2",
+    "GCF_001688845.2_ASM168884v2",
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/688/845/GCF_001688845.2_ASM168884v2",
+)
 
 def test_ssu_seqs():
-    a = RefseqAssembly(
-        assembly_accession = "GCF_001688845.2",
-        ftp_path = (
-            "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/688/845/"
-            "GCF_001688845.2_ASM168884v2"),
-    )
+    db = RefSeq(DATA_DIR)
+    rna_fp = db.download_rna(a)
+    assert rna_fp == os.path.join(
+        DATA_DIR, "rna_fasta", "GCF_001688845.2_ASM168884v2_rna_from_genomic.fna")
 
-    seqs = a.ssu_seqs
+    seqs = db.get_16S_seqs(a)
+    seqs = list(seqs)
     assert len(seqs) == 4
 
-    s0_desc, s0_seq = seqs[0]
-    assert s0_desc.startswith("lcl|NZ_CP015402.2_rrna_41 ")
-    assert s0_seq.startswith("ACAACGAAGAGTTTGATCCTGGCTCAGGATGAACGCTAGCGACAGG")
+    desc, seq = seqs[0]
+    assert desc.startswith("lcl|NZ_CP015402.2_rrna_41 ")
+    assert seq.startswith("ACAACGAAGAGTTTGATCCTGGCTCAGGATGAACGCTAGCGACAGG")
 
 def test_download_genome():
-    a = RefseqAssembly(
-        assembly_accession = "GCF_001688845.2",
-        ftp_path = (
-            "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/688/845/"
-            "GCF_001688845.2_ASM168884v2"),
-    )
-
-    a.download_genome()
-    assert os.path.exists(a.genome_fp)
+    db = RefSeq(DATA_DIR)
+    genome_fp = db.download_genome(a)
+    assert os.path.exists(genome_fp)

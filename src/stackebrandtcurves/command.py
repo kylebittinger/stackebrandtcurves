@@ -4,6 +4,7 @@ import itertools
 import os
 import random
 
+from .refseq import RefSeq
 from .assembly import RefseqAssembly
 from .ssu import Refseq16SDatabase
 
@@ -42,6 +43,10 @@ def main(argv=None):
         "--assembly-summary",
         help="Assembly summary file (default: download from NCBI)",
     )
+    p.add_argument(
+        "--data-dir", default="refseq_data",
+        help="Data directory (default: refseq_data)",
+    )
     args = p.parse_args(argv)
 
     if args.output_file is None:
@@ -55,16 +60,18 @@ def main(argv=None):
 
     random.seed(args.seed)
 
+    refseq = RefSeq(args.data_dir)
+    db = Refseq16SDatabase()
+
     if args.assembly_summary:
         assembly_summary_fp = args.assembly_summary
     else:
-        assembly_summary_fp = "refseq_bacteria_assembly_summary.txt"
-        RefseqAssembly.download_summary(assembly_summary_fp)
+        assembly_summary_fp = refseq.download_summary()
 
     with open(assembly_summary_fp, "r") as f:
-        assemblies = RefseqAssembly.load(f)
+        assemblies = {
+            a.accession: a for a in RefseqAssembly.parse_summary(f)}
 
-    db = Refseq16SDatabase()
     if os.path.exists(db.accession_fp):
         db.load(assemblies)
     else:

@@ -35,13 +35,13 @@ class Refseq16SDatabase:
                 self.seqids_by_assembly[assembly.accession].append(seqid)
                 seen.add(seq)
 
-    def load(self, assemblies):
+    def load(self, assembly_dict):
         with open(self.accession_fp, "r") as f:
             for line in f:
                 toks = line.strip().split()
                 seqid = toks[0]
                 accession = toks[1]
-                assembly = assemblies[accession]
+                assembly = assembly_dict[accession]
                 self.assemblies[seqid] = assembly
                 self.seqids_by_assembly[assembly.accession].append(seqid)
         with open(self.fasta_fp, "r") as f:

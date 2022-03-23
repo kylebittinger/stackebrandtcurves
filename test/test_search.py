@@ -17,10 +17,10 @@ MockAssembly = collections.namedtuple("Assembly", ["accession", "ssu_seqs"])
 def test_search_seq(tmpdir):
     search_dir = os.path.join(tmpdir, "search_xyz")
     Refseq16SDatabase.search_dir = search_dir
-    with open(ASSEMBLY_SUMMARY_FP) as f:
-        assemblies = RefseqAssembly.load(f)
     db = Refseq16SDatabase()
-    db.load(assemblies)
+    with open(ASSEMBLY_SUMMARY_FP) as f:
+        assemblies = RefseqAssembly.parse_summary(f)
+        db.load({a.accession: a for a in assemblies})
     hits = db.search_seq("lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)
     assert len(hits) == 13
@@ -29,10 +29,10 @@ def test_search_seq(tmpdir):
 
 def test_exhaustive_search(tmpdir):
     Refseq16SDatabase.search_dir = tmpdir
-    with open(ASSEMBLY_SUMMARY_FP) as f:
-        assemblies = RefseqAssembly.load(f)
     db = Refseq16SDatabase()
-    db.load(assemblies)
+    with open(ASSEMBLY_SUMMARY_FP) as f:
+        assemblies = RefseqAssembly.parse_summary(f)
+        db.load({a.accession: a for a in assemblies})
     hits = db.exhaustive_search(
         "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)
