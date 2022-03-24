@@ -1,25 +1,9 @@
-import collections
 import os
 
 from stackebrandtcurves.refseq import RefSeq
 from stackebrandtcurves.ssu import SearchApplication
-from stackebrandtcurves.assembly import RefseqAssembly
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-ASSEMBLY_SUMMARY_FP = os.path.join(DATA_DIR, "muribaculum_assembly_summary.txt")
-TEST_FASTA = os.path.join(DATA_DIR, "muribaculum.fasta")
-TEST_ACCESSIONS = os.path.join(DATA_DIR, "muribaculum_accessions.txt")
-
-MockAssembly = collections.namedtuple("Assembly", ["accession", "ssu_seqs"])
-
-class MockRefSeq:
-    data_dir = DATA_DIR
-    def get_16S_seqs(self, assembly):
-        return [
-            ("seq1", "GCTCGCATCGAT"),
-            ("seq2", "GCTCGCATCGAT"), # duplicate, will not be added
-            ("seq3", "TGCTCAGTCGT"),
-        ]
 
 def test_search_seq():
     refseq = RefSeq(DATA_DIR)
