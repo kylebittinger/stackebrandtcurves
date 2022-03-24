@@ -16,50 +16,12 @@ class SearchApplication:
             self._work_dir_obj = tempfile.TemporaryDirectory()
             self.work_dir = self._work_dir_obj.name
 
-    def compute_pctids(self, min_pctid=97.0, threads=None):
-        aligner = PctidAligner(self.db.ssu_fasta_fp)
-        if not os.path.exists(aligner.hits_fp):
-            aligner.search(min_pctid=min_pctid, threads=threads)
-        with open(aligner.hits_fp) as f:
-            for hit in aligner.parse(f):
-                query = self.db.seqid_assemblies(hit["qseqid"])
-                subject = self.db.seqid_assemblies(hit["sseqid"])
-                pctid = hit["pident"]
-                yield SearchResult(query, subject, pctid)
-
-    def search_one(self, query_seqid, pctid, threads=None):
-        pctid_str = "{:.1f}".format(pctid)
-        print("Searching", query_seqid, "at", pctid_str, "pct identity")
-        query_seq = self.seqs[query_seqid]
-        query_fp = "temp_query.fasta"
-        if os.path.exists(query_fp):
-            os.rename(query_fp, "temp_prev_query.fasta")
-        query_hits_fp = "temp_query_hits.txt"
-        if os.path.exists(query_hits_fp):
-            os.rename(query_hits_fp, "temp_prev_query_hits.txt")
-        with open(query_fp, "w") as f:
-            f.write(">{0}\n{1}\n".format(query_seqid, query_seq))
-        aligner = PctidAligner(self.db.ssu_fasta_fp)
-        aligner.search(
-            query_fp, query_hits_fp, min_pctid=pctid,
-            threads=threads)
-        with open(query_hits_fp) as f:
-            hits = aligner.parse(f)
-            for hit in hits:
-                if hit["pident"] == pctid_str:
-                    query = self.db.seqid_assemblies[hit["qseqid"]]
-                    subject = self.db.seqid_assemblies[hit["sseqid"]]
-                    pctid = hit["pident"]
-                    yield SearchResult(
-                        query, subject, pctid,
-                        hit["qseqid"], hit["sseqid"])
-
     def get_temp_fp(self, filename):
         return os.path.join(self.work_dir, filename)
 
     def exhaustive_search(
-            self, query_seqid, query_seq, min_pctid=90.0, max_hits=10000,
-            threads=None):
+            self, query_seqid, query_seq, min_pctid=90.0,
+            max_hits=10000, threads=None):
         already_found = set()
         already_found.add(query_seqid)
 
@@ -87,45 +49,47 @@ class SearchApplication:
                 break
         print("Exhausted 10 search trials")
 
-    # Used by the main command
     def search_seq(
-            self, query_seqid, query_seq, min_pctid=90.0, max_hits=100000,
-            threads=None, subject_fp=None):
-
+            self, query_seqid, query_seq, min_pctid=90.0,
+            max_hits=100000, threads=None, subject_fp=None):
+        clear_db = subject_fp is not None
         if subject_fp is None:
             subject_fp = self.db.ssu_fasta_fp
 
+        hits = self.search_once(
+            query_seqid, query_seq, subject_fp, min_pctid=min_pctid,
+            max_hits=max_hits, threads=threads, clear_db=clear_db)
+
+        for hit in hits:
+            query = self.db.seqid_assemblies[hit["qseqid"]]
+            subject = self.db.seqid_assemblies[hit["sseqid"]]
+            if query.accession != subject.accession:
+                yield SearchResult(
+                    query, subject, hit["pident"],
+                    hit["qseqid"], hit["sseqid"])
+
+    def search_once(
+            self, query_seqid, query_seq, subject_fp, min_pctid=90.0,
+            max_hits=100000, threads=None, clear_db=False):
         query_fp = self.get_temp_fp("query.fasta")
-        previous_query_fp = self.get_temp_fp("previous_query.fasta")
-        if os.path.exists(query_fp):
-            os.rename(query_fp, previous_query_fp)
-
-        hits_fp = self.get_temp_fp("hits.txt")
-        previous_hits_fp = self.get_temp_fp("previous_hits.txt")
-        if os.path.exists(hits_fp):
-            os.rename(hits_fp, previous_hits_fp)
-
         with open(query_fp, "w") as f:
             f.write(">{0}\n{1}\n".format(query_seqid, query_seq))
+        hits_fp = self.get_temp_fp("hits.txt")
+
         aligner = PctidAligner(subject_fp)
         aligner.search(
             query_fp, hits_fp, min_pctid=min_pctid, max_hits=max_hits,
             threads=threads)
+        if clear_db:
+            aligner.clear_db()
 
         with open(hits_fp) as f:
-            hits = aligner.parse(f)
-            for hit in hits:
+            for hit in aligner.parse(f):
+                hit["vsearch_pident"] = hit["pident"]
                 nt_positions = len(hit["qseq"])
                 nt_matches = count_matches(hit["qseq"], hit["sseq"])
-                pctid = 100 * (nt_matches / nt_positions)
-                query = self.db.seqid_assemblies[hit["qseqid"]]
-                subject = self.db.seqid_assemblies[hit["sseqid"]]
-                if query.accession != subject.accession:
-                    yield SearchResult(
-                        query, subject, pctid,
-                        hit["qseqid"], hit["sseqid"])
-        if subject_fp is not None:
-            aligner.clear_db()
+                hit["pident"] = 100 * (nt_matches / nt_positions)
+                yield hit
 
 
 class PctidAligner:
