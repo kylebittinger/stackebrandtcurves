@@ -1,9 +1,15 @@
 import os
 
 from stackebrandtcurves.refseq import RefSeq
-from stackebrandtcurves.ssu import SearchApplication
+from stackebrandtcurves.ssu import SearchApplication, count_matches
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+
+def test_count_matches():
+    s1 = "ACGTNNY-G"
+    s2 = "ACGGNAA-G"
+    #     ^^^ ^^ ^^
+    assert count_matches(s1, s2) == 7
 
 def test_search_seq():
     refseq = RefSeq(DATA_DIR)

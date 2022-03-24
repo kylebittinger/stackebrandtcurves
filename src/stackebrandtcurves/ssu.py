@@ -215,3 +215,35 @@ def limit_results(results, max_results_pctid=None):
             pctid_results = random.sample(pctid_results, k=max_results_pctid)
         for result in pctid_results:
             yield result
+
+AMBIGUOUS_BASES = {
+    "-": "-",
+    "T": "T",
+    "C": "C",
+    "A": "A",
+    "G": "G",
+    "R": "AG",
+    "Y": "TC",
+    "M": "CA",
+    "K": "TG",
+    "S": "CG",
+    "W": "TA",
+    "H": "TCA",
+    "B": "TCG",
+    "V": "CAG",
+    "D": "TAG",
+    "N": "TCAG",
+}
+
+def nucleotides_compatible(nt1, nt2):
+    if (nt1 == "N") or (nt2 == "N"):
+        return True
+    a1 = AMBIGUOUS_BASES[nt1]
+    a2 = AMBIGUOUS_BASES[nt2]
+    return bool(set(a1).intersection(a2))
+
+def nucleotides_match(q, s):
+    return (q == s) or nucleotides_compatible(q, s)
+
+def count_matches(qseq, sseq):
+    return sum([nucleotides_match(q, s) for q, s in zip(qseq, sseq)])
