@@ -1,9 +1,9 @@
 import collections
 import os
+import random
 import subprocess
 import tempfile
 
-from .parse import parse_fasta, write_fasta
 
 class SearchApplication:
     def __init__(self, db, work_dir=None):
@@ -38,7 +38,7 @@ class SearchApplication:
         if os.path.exists(query_hits_fp):
             os.rename(query_hits_fp, "temp_prev_query_hits.txt")
         with open(query_fp, "w") as f:
-            write_fasta(f, [(query_seqid, query_seq)])
+            f.write(">{0}\n{1}\n".format(query_seqid, query_seq))
         aligner = PctidAligner(self.db.ssu_fasta_fp)
         aligner.search(
             query_fp, query_hits_fp, min_pctid=pctid,
@@ -205,3 +205,13 @@ class SearchResult:
             pctid_format, self.ani["ani"],
             self.ani["fragments_aligned"], self.ani["fragments_total"],
         )
+
+def limit_results(results, max_results_pctid=None):
+    by_pctid = collections.defaultdict(list)
+    for result in results:
+        by_pctid[result.pctid].append(result)
+    for pctid, pctid_results in by_pctid.items():
+        if len(pctid_results) > max_results_pctid:
+            pctid_results = random.sample(pctid_results, k=max_results_pctid)
+        for result in pctid_results:
+            yield result

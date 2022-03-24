@@ -1,13 +1,5 @@
-import argparse
-import collections
-import itertools
 import os
-import os.path
-import random
-import re
-import shutil
 import subprocess
-import urllib.error
 import tempfile
 
 from .parse import parse_pairwise_ani
