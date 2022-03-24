@@ -26,8 +26,8 @@ find other genomes with similar 16S sequences, then compute the ANI
 for each one. The program generates a tab-separated output file that
 can be used to plot your own Stackebrandt curves.
 
-[^1] Stackebrandt E and Goebel EM. *International Journal of Systematic
-and Environmental Microbiology* **44**, 846 (1994).
+[^1]: Stackebrandt E and Goebel EM. *International Journal of
+Systematic and Environmental Microbiology* **44**, 846 (1994).
 
 ## Installation
 
