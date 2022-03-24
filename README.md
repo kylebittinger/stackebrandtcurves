@@ -5,11 +5,13 @@ identity (ANI) and 16S rRNA gene similarity for bacterial genomes.
 
 ## Summary
 
-"Stackebrandt curves" aren't really a thing; I made up the name. The idea
-comes from a 1994 paper by Stackebrandt and Goebel[^1], which may have been
-the first to compare 16S rRNA gene similarity with whole-genome
-similarity. In that paper, the authors used DNA-DNA hybridization results
-rather than ANI between sequenced genomes to compare full-genomes.
+"Stackebrandt curves" aren't really a thing; I made up the name. The
+idea comes from a 1994 paper by Stackebrandt and Goebel[^1], which may
+have been the first to compare 16S rRNA gene similarity with
+whole-genome similarity. In that paper, the authors used DNA-DNA
+hybridization results rather than ANI to measure genome similarity. In
+a later study, Kim et al.[^2] found that ANI followed the same
+pattern.
 
 To a high degree, 16S gene similarity and full-genome similarity are
 correlated. However, Stackebrandt and Goebel observed that 16S
@@ -18,6 +20,11 @@ low. Conversely, full-genome similarity is rarely high if 16S
 similarity is low. When plotted with 16S similarity on the y-axis and
 full-genome similarity on the x-axis, the relationship looks like a
 curve bending along the top of the plot.
+
+Here is an example that follows the classic pattern: *Cutibacterium
+acnes* (accession GCF_008728435.1).
+
+![ANI vs. 16S gene similarity for Cutibacterium acnes](/media/cutibacterium_acnes_curve.png)
 
 The purpose of this software is to generate 16S gene similarity and
 ANI data for any bacterial genome in NCBI RefSeq. To do this, we
@@ -28,6 +35,9 @@ can be used to plot your own Stackebrandt curves.
 
 [^1]: Stackebrandt E and Goebel EM. *International Journal of
 Systematic and Environmental Microbiology* **44**, 846 (1994).
+
+[^2]: Kim M, Oh HS, Park SC, Chun J. *International Journal of
+Systematic and Environmental Microbiology* **64**, 346 (2014).
 
 ## Installation
 
