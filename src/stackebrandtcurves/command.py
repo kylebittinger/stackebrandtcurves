@@ -24,6 +24,10 @@ def main(argv=None):
         help="Minimum 16S percent ID",
     )
     p.add_argument(
+        "--max-hits", type=int, default=100000,
+        help="Maximum number of hits in each search (default: %(default)s)",
+    )
+    p.add_argument(
         "--max-unique-pctid", type=int, default=100,
         help=(
             "Maximum number of ANI comparisons for each unique value of 16S "
@@ -79,12 +83,12 @@ def main(argv=None):
     if args.multi_stage_search:
         results = search_app.exhaustive_search(
             query_seqid, query_seq,
-            min_pctid=args.min_pctid,
+            min_pctid=args.min_pctid, max_hits=args.max_hits,
             threads=args.num_threads)
     else:
         results = search_app.search_seq(
             query_seqid, query_seq,
-            min_pctid=args.min_pctid,
+            min_pctid=args.min_pctid, max_hits=args.max_hits,
             threads=args.num_threads)
     results = list(results)
     if args.max_unique_pctid:

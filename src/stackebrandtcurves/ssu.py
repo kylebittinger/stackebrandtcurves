@@ -58,11 +58,14 @@ class SearchApplication:
         return os.path.join(self.work_dir, filename)
 
     def exhaustive_search(
-            self, query_seqid, query_seq, min_pctid=90.0, threads=None):
+            self, query_seqid, query_seq, min_pctid=90.0, max_hits=10000,
+            threads=None):
         already_found = set()
         already_found.add(query_seqid)
 
-        hits = self.search_seq(query_seqid, query_seq, min_pctid, threads)
+        hits = self.search_seq(
+            query_seqid, query_seq, min_pctid=min_pctid,
+            max_hits=max_hits, threads=threads)
         for hit in hits:
             already_found.add(hit.subject_seqid)
             yield hit
@@ -72,8 +75,9 @@ class SearchApplication:
             filtered_subject_fp = self.get_temp_fp("filtered_subject.fasta")
             self.db.save_filtered_seqs(filtered_subject_fp, already_found)
             hits = self.search_seq(
-                query_seqid, query_seq, min_pctid, threads,
-                filtered_subject_fp)
+                query_seqid, query_seq, min_pctid=min_pctid,
+                max_hits=max_hits, threads=threads,
+                subject_fp=filtered_subject_fp)
             n_hits = 0
             for hit in hits:
                 n_hits += 1
@@ -85,8 +89,8 @@ class SearchApplication:
 
     # Used by the main command
     def search_seq(
-            self, query_seqid, query_seq, min_pctid=90.0, threads=None,
-            subject_fp=None):
+            self, query_seqid, query_seq, min_pctid=90.0, max_hits=100000,
+            threads=None, subject_fp=None):
 
         if subject_fp is None:
             subject_fp = self.db.ssu_fasta_fp
@@ -105,7 +109,8 @@ class SearchApplication:
             f.write(">{0}\n{1}\n".format(query_seqid, query_seq))
         aligner = PctidAligner(subject_fp)
         aligner.search(
-            query_fp, hits_fp, min_pctid=min_pctid, threads=threads)
+            query_fp, hits_fp, min_pctid=min_pctid, max_hits=max_hits,
+            threads=threads)
 
         with open(hits_fp) as f:
             hits = aligner.parse(f)
@@ -148,7 +153,7 @@ class PctidAligner:
 
     def search(
             self, input_fp=None, hits_fp=None, min_pctid=97.0,
-            threads=None):
+            max_hits=10000, threads=None):
         if input_fp is None:
             input_fp = self.fasta_fp
         if hits_fp is None:
@@ -163,7 +168,7 @@ class PctidAligner:
             "--iddef", "2", "--id", min_id,
             "--userfields",
             "query+target+id2",
-            "--maxaccepts", str(10000),
+            "--maxaccepts", str(max_hits),
         ]
         if threads is not None:
             args.extend(["--threads", str(threads)])
