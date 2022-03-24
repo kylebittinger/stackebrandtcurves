@@ -16,7 +16,7 @@ def test_multi_search():
         "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     search_results = list(search_results)
     ani_app = AniApplication(refseq)
-    ani_results = ani_app.compute_multi_ani(search_results)
+    ani_results = ani_app.compute_ani(search_results)
     assert len(ani_results) == len(search_results)
     assert ani_results[0]["ref_fp"].endswith(
         "GCF_002201515.1_ASM220151v1_genomic.fna")

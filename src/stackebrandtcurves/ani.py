@@ -15,7 +15,7 @@ class AniApplication:
             self._work_dir_obj = tempfile.TemporaryDirectory()
             self.work_dir = self._work_dir_obj.name
 
-    def compute_multi_ani(self, search_results):
+    def compute_ani(self, search_results):
         query = search_results[0].query
         subjects = list(set(r.subject for r in search_results))
 

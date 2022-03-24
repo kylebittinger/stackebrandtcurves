@@ -89,7 +89,7 @@ def main(argv=None):
     results = limit_results(results, args.max_unique_pctid)
     results = list(results)
 
-    ani_results = ani_app.compute_multi_ani(results)
+    ani_results = ani_app.compute_ani(results)
     for search_result, ani_result in zip(results, ani_results):
         try:
             search_result.ani = ani_result
