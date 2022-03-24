@@ -1,7 +1,6 @@
 import os
 import re
 import subprocess
-import urllib
 
 from .download import get_url
 from .parse import parse_fasta

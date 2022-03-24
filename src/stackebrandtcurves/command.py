@@ -1,12 +1,8 @@
 import argparse
-import collections
-import itertools
-import os
 import random
 
 from .refseq import RefSeq
-from .assembly import RefseqAssembly
-from .ssu import SearchApplication
+from .ssu import SearchApplication, limit_results
 from .ani import AniApplication
 
 def main(argv=None):
@@ -90,9 +86,7 @@ def main(argv=None):
             query_seqid, query_seq,
             min_pctid=args.min_pctid, max_hits=args.max_hits,
             threads=args.num_threads)
-    results = list(results)
-    if args.max_unique_pctid:
-        results = list(limit_results(results, args.max_unique_pctid))
+    results = limit_results(results, args.max_unique_pctid)
 
     for result in results:
         try:
@@ -101,13 +95,3 @@ def main(argv=None):
             output_file.flush()
         except Exception as e:
             print(e)
-
-def limit_results(results, max_results_pctid=None):
-    by_pctid = collections.defaultdict(list)
-    for result in results:
-        by_pctid[result.pctid].append(result)
-    for pctid, pctid_results in by_pctid.items():
-        if len(pctid_results) > max_results_pctid:
-            pctid_results = random.sample(pctid_results, k=max_results_pctid)
-        for result in pctid_results:
-            yield result
