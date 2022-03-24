@@ -1,3 +1,9 @@
+# Emacs backup files
+*~
+
+# Vsearch databases
+*.udb
+
 .DS_Store
 
 # History files

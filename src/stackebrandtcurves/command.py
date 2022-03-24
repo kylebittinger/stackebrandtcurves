@@ -4,8 +4,10 @@ import itertools
 import os
 import random
 
+from .refseq import RefSeq
 from .assembly import RefseqAssembly
-from .ssu import Refseq16SDatabase
+from .ssu import SearchApplication
+from .ani import AniApplication
 
 def main(argv=None):
     p = argparse.ArgumentParser()
@@ -22,8 +24,8 @@ def main(argv=None):
         help="Minimum 16S percent ID",
     )
     p.add_argument(
-        "--max-hits", type=int, default=10000,
-        help="Maximum number of 16S alignments to collect",
+        "--max-hits", type=int, default=100000,
+        help="Maximum number of hits in each search (default: %(default)s)",
     )
     p.add_argument(
         "--max-unique-pctid", type=int, default=100,
@@ -38,7 +40,23 @@ def main(argv=None):
         "--seed", type=int, default=42,
         help="Random number seed",
     )
-    args = p.parse_args()
+    p.add_argument(
+        "--multi-stage-search", action="store_true",
+        help="Conduct exhaustive 16S search in several stages",
+    )
+    p.add_argument(
+        "--search-dir",
+        help="Directory for search-related files (default: temp directory)",
+    )
+    p.add_argument(
+        "--ani-dir",
+        help="Directory for ANI-related files (default: temp directory)",
+    )
+    p.add_argument(
+        "--data-dir", default="refseq_data",
+        help="Data directory (default: refseq_data)",
+    )
+    args = p.parse_args(argv)
 
     if args.output_file is None:
         args.output_file = "assembly_{0}_pctid_ani.txt".format(
@@ -51,41 +69,45 @@ def main(argv=None):
 
     random.seed(args.seed)
 
-    assemblies = RefseqAssembly.load()
+    refseq = RefSeq(args.data_dir)
+    refseq.load_assemblies()
+    refseq.load_seqs()
+    refseq.save_seqs()
 
-    db = Refseq16SDatabase(
-        "refseq_16S_all.fasta",
-        "refseq_16S_accessions_all.txt")
-    if os.path.exists(db.accession_fp):
-        db.load(assemblies)
+    search_app = SearchApplication(refseq, work_dir=args.search_dir)
+    ani_app = AniApplication(refseq, work_dir=args.ani_dir)
+
+    query_seqs = refseq.assembly_seqs[args.assembly_accession]
+    query_seqid, query_seq = query_seqs[0]
+
+    if args.multi_stage_search:
+        results = search_app.exhaustive_search(
+            query_seqid, query_seq,
+            min_pctid=args.min_pctid, max_hits=args.max_hits,
+            threads=args.num_threads)
     else:
-        for assembly in assemblies.values():
-            db.add_assembly(assembly)
-        db.save()
-
-    query_assembly = assemblies[args.assembly_accession]
-    query_assembly_seqids = db.seqids_by_assembly[query_assembly.accession]
-    query_seqid = query_assembly_seqids[0]
-    query_seq = db.seqs[query_seqid]
-
-    assembly_pairs = db.search_seq(
-        query_seqid, query_seq,
-        min_pctid=args.min_pctid, max_hits=args.max_hits,
-        threads=args.num_threads)
-    assembly_pairs = list(assembly_pairs)
+        results = search_app.search_seq(
+            query_seqid, query_seq,
+            min_pctid=args.min_pctid, max_hits=args.max_hits,
+            threads=args.num_threads)
+    results = list(results)
     if args.max_unique_pctid:
-        pairs_by_pctid = collections.defaultdict(list)
-        for pair in assembly_pairs:
-            pairs_by_pctid[pair.pctid].append(pair)
-        for pctid, pairs in pairs_by_pctid.items():
-            if len(pairs) > args.max_unique_pctid:
-                pairs_by_pctid[pctid] = random.sample(pairs, k=args.max_unique_pctid)
-        assembly_pairs = list(itertools.chain.from_iterable(pairs_by_pctid.values()))
-    
-    for assembly_pair in assembly_pairs:
+        results = list(limit_results(results, args.max_unique_pctid))
+
+    for result in results:
         try:
-            assembly_pair.compute_ani()
-            output_file.write(assembly_pair.format_output())
+            result.ani = ani_app.compute_ani(result.query, result.subject)
+            output_file.write(result.format_output())
             output_file.flush()
         except Exception as e:
             print(e)
+
+def limit_results(results, max_results_pctid=None):
+    by_pctid = collections.defaultdict(list)
+    for result in results:
+        by_pctid[result.pctid].append(result)
+    for pctid, pctid_results in by_pctid.items():
+        if len(pctid_results) > max_results_pctid:
+            pctid_results = random.sample(pctid_results, k=max_results_pctid)
+        for result in pctid_results:
+            yield result

@@ -1,66 +1,33 @@
 import collections
 import os
 import subprocess
+import tempfile
 
-from .ani import AssemblyPair
 from .parse import parse_fasta, write_fasta
 
-class Refseq16SDatabase:
-    def __init__(
-            self, fasta_fp="refseq_16S.fasta",
-            accession_fp="refseq_16S_accessions.txt"):
-        self.fasta_fp = fasta_fp
-        self.accession_fp = accession_fp
-        self.seqs = {}
-        self.assemblies = {}
-        self.seqids_by_assembly = collections.defaultdict(list)
-
-    def add_assembly(self, assembly):
-        seqs = list(assembly.ssu_seqs)
-
-        # Avoid writing duplicate sequences for the same genome
-        seen = set()
-        for desc, seq in seqs:
-            if seq not in seen:
-                print(desc)
-                seqid = desc.split()[0]
-                self.assemblies[seqid] = assembly
-                self.seqs[seqid] = seq
-                self.seqids_by_assembly[assembly.accession].append(seqid)
-                seen.add(seq)
-
-    def load(self, assemblies):
-        with open(self.accession_fp, "r") as f:
-            for line in f:
-                toks = line.strip().split()
-                seqid = toks[0]
-                accession = toks[1]
-                assembly = assemblies[accession]
-                self.assemblies[seqid] = assembly
-                self.seqids_by_assembly[assembly.accession].append(seqid)
-        with open(self.fasta_fp, "r") as f:
-            for seqid, seq in parse_fasta(f):
-                self.seqs[seqid] = seq
-
-    def save(self):
-        with open(self.fasta_fp, "w") as f:
-            write_fasta(f, self.seqs.items())
-        with open(self.accession_fp, "w") as f:
-            for seqid, assembly in self.assemblies.items():
-                f.write("{0}\t{1}\n".format(seqid, assembly.accession))
+class SearchApplication:
+    def __init__(self, db, work_dir=None):
+        self.db = db
+        if work_dir is not None:
+            if not os.path.exists(work_dir):
+                os.makedirs(work_dir)
+            self.work_dir = work_dir
+        else:
+            self._work_dir_obj = tempfile.TemporaryDirectory()
+            self.work_dir = self._work_dir_obj.name
 
     def compute_pctids(self, min_pctid=97.0, threads=None):
-        aligner = PctidAligner(self.fasta_fp)
+        aligner = PctidAligner(self.db.ssu_fasta_fp)
         if not os.path.exists(aligner.hits_fp):
             aligner.search(min_pctid=min_pctid, threads=threads)
         with open(aligner.hits_fp) as f:
             for hit in aligner.parse(f):
-                query = self.assemblies[hit["qseqid"]]
-                subject = self.assemblies[hit["sseqid"]]
+                query = self.db.seqid_assemblies(hit["qseqid"])
+                subject = self.db.seqid_assemblies(hit["sseqid"])
                 pctid = hit["pident"]
-                yield AssemblyPair(query, subject, pctid)
+                yield SearchResult(query, subject, pctid)
 
-    def search_one(self, query_seqid, pctid, max_hits=10000, threads=None):
+    def search_one(self, query_seqid, pctid, threads=None):
         pctid_str = "{:.1f}".format(pctid)
         print("Searching", query_seqid, "at", pctid_str, "pct identity")
         query_seq = self.seqs[query_seqid]
@@ -72,45 +39,91 @@ class Refseq16SDatabase:
             os.rename(query_hits_fp, "temp_prev_query_hits.txt")
         with open(query_fp, "w") as f:
             write_fasta(f, [(query_seqid, query_seq)])
-        aligner = PctidAligner(self.fasta_fp)
+        aligner = PctidAligner(self.db.ssu_fasta_fp)
         aligner.search(
             query_fp, query_hits_fp, min_pctid=pctid,
-            threads=threads, max_hits=max_hits)
+            threads=threads)
         with open(query_hits_fp) as f:
             hits = aligner.parse(f)
             for hit in hits:
                 if hit["pident"] == pctid_str:
-                    query = self.assemblies[hit["qseqid"]]
-                    subject = self.assemblies[hit["sseqid"]]
+                    query = self.db.seqid_assemblies[hit["qseqid"]]
+                    subject = self.db.seqid_assemblies[hit["sseqid"]]
                     pctid = hit["pident"]
-                    yield AssemblyPair(
+                    yield SearchResult(
                         query, subject, pctid,
                         hit["qseqid"], hit["sseqid"])
 
+    def get_temp_fp(self, filename):
+        return os.path.join(self.work_dir, filename)
+
+    def exhaustive_search(
+            self, query_seqid, query_seq, min_pctid=90.0, max_hits=10000,
+            threads=None):
+        already_found = set()
+        already_found.add(query_seqid)
+
+        hits = self.search_seq(
+            query_seqid, query_seq, min_pctid=min_pctid,
+            max_hits=max_hits, threads=threads)
+        for hit in hits:
+            already_found.add(hit.subject_seqid)
+            yield hit
+
+        for trial in range(10):
+            print("Follow-up search, trial {0}".format(trial + 1))
+            filtered_subject_fp = self.get_temp_fp("filtered_subject.fasta")
+            self.db.save_filtered_seqs(filtered_subject_fp, already_found)
+            hits = self.search_seq(
+                query_seqid, query_seq, min_pctid=min_pctid,
+                max_hits=max_hits, threads=threads,
+                subject_fp=filtered_subject_fp)
+            n_hits = 0
+            for hit in hits:
+                n_hits += 1
+                already_found.add(hit.subject_seqid)
+                yield hit
+            if n_hits == 0:
+                break
+        print("Exhausted 10 search trials")
+
+    # Used by the main command
     def search_seq(
-            self, query_seqid, query_seq, min_pctid=90.0, max_hits=10000, threads=None):
-        query_fp = "temp_query.fasta"
+            self, query_seqid, query_seq, min_pctid=90.0, max_hits=100000,
+            threads=None, subject_fp=None):
+
+        if subject_fp is None:
+            subject_fp = self.db.ssu_fasta_fp
+
+        query_fp = self.get_temp_fp("query.fasta")
+        previous_query_fp = self.get_temp_fp("previous_query.fasta")
         if os.path.exists(query_fp):
-            os.rename(query_fp, "temp_prev_query.fasta")
-        query_hits_fp = "temp_query_hits.txt"
-        if os.path.exists(query_hits_fp):
-            os.rename(query_hits_fp, "temp_prev_query_hits.txt")
+            os.rename(query_fp, previous_query_fp)
+
+        hits_fp = self.get_temp_fp("hits.txt")
+        previous_hits_fp = self.get_temp_fp("previous_hits.txt")
+        if os.path.exists(hits_fp):
+            os.rename(hits_fp, previous_hits_fp)
+
         with open(query_fp, "w") as f:
-            write_fasta(f, [(query_seqid, query_seq)])
-        aligner = PctidAligner(self.fasta_fp)
+            f.write(">{0}\n{1}\n".format(query_seqid, query_seq))
+        aligner = PctidAligner(subject_fp)
         aligner.search(
-            query_fp, query_hits_fp, min_pctid=min_pctid,
-            threads=threads, max_hits=max_hits)
-        with open(query_hits_fp) as f:
+            query_fp, hits_fp, min_pctid=min_pctid, max_hits=max_hits,
+            threads=threads)
+
+        with open(hits_fp) as f:
             hits = aligner.parse(f)
             for hit in hits:
-                query = self.assemblies[hit["qseqid"]]
-                subject = self.assemblies[hit["sseqid"]]
+                query = self.db.seqid_assemblies[hit["qseqid"]]
+                subject = self.db.seqid_assemblies[hit["sseqid"]]
                 pctid = hit["pident"]
                 if query.accession != subject.accession:
-                    yield AssemblyPair(
+                    yield SearchResult(
                         query, subject, pctid,
                         hit["qseqid"], hit["sseqid"])
+        if subject_fp is not None:
+            aligner.clear_db()
 
 
 class PctidAligner:
@@ -135,9 +148,12 @@ class PctidAligner:
         ]
         return subprocess.check_call(args)
 
+    def clear_db(self):
+        os.remove(self.reference_udb_fp)
+
     def search(
             self, input_fp=None, hits_fp=None, min_pctid=97.0,
-            threads=None, max_hits=10000):
+            max_hits=10000, threads=None):
         if input_fp is None:
             input_fp = self.fasta_fp
         if hits_fp is None:
@@ -152,15 +168,8 @@ class PctidAligner:
             "--iddef", "2", "--id", min_id,
             "--userfields",
             "query+target+id2",
+            "--maxaccepts", str(max_hits),
         ]
-        if max_hits is None:
-            args.extend([
-                "--maxaccepts", "0", "--maxrejects", "0",
-            ])
-        else:
-            args.extend([
-                "--maxaccepts", str(max_hits),
-            ])
         if threads is not None:
             args.extend(["--threads", str(threads)])
         print(args)
@@ -176,3 +185,23 @@ class PctidAligner:
             hit = dict(zip(self.field_names, vals))
             if hit["qseqid"] != hit["sseqid"]:
                 yield hit
+
+class SearchResult:
+    def __init__(
+            self, query, subject, pctid=None,
+            query_seqid=None, subject_seqid=None):
+        self.query = query
+        self.subject = subject
+        self.pctid = pctid
+        self.ani = None
+        self.query_seqid = query_seqid
+        self.subject_seqid = subject_seqid
+
+    def format_output(self):
+        pctid_format = round(float(self.pctid), 1)
+        return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(
+            self.query.accession, self.subject.accession,
+            self.query_seqid, self.subject_seqid,
+            pctid_format, self.ani["ani"],
+            self.ani["fragments_aligned"], self.ani["fragments_total"],
+        )
