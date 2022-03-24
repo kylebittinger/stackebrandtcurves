@@ -87,11 +87,13 @@ def main(argv=None):
             min_pctid=args.min_pctid, max_hits=args.max_hits,
             threads=args.num_threads)
     results = limit_results(results, args.max_unique_pctid)
+    results = list(results)
 
-    for result in results:
+    ani_results = ani_app.compute_multi_ani(results)
+    for search_result, ani_result in zip(results, ani_results):
         try:
-            result.ani = ani_app.compute_ani(result.query, result.subject)
-            output_file.write(result.format_output())
+            search_result.ani = ani_result
+            output_file.write(search_result.format_output())
             output_file.flush()
         except Exception as e:
             print(e)
