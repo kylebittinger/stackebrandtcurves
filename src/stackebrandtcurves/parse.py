@@ -1,10 +1,23 @@
 from io import StringIO
 
+OUTPUT_FIELDS = [
+    "query_assembly", "subject_assembly", "query_seqid", "subject_seqid",
+    "pctid", "ani", "fragments_aligned", "fragments_total"
+    ]
+OUTPUT_TYPES = [str, str, str, str, float, float, int, int]
+
+def parse_output(f):
+    next(f) # skip header
+    for line in f:
+        toks = line.strip().split("\t")
+        vals = [fcn(tok) for tok, fcn in zip(toks, OUTPUT_TYPES)]
+        yield dict(zip(OUTPUT_FIELDS, vals))
+
 ANI_FIELDS = [
     "query_fp", "ref_fp", "ani", "fragments_aligned", "fragments_total"]
 ANI_TYPES = [str, str, float, int, int]
 
-def parse_pairwise_ani(f):
+def parse_ani(f):
     for line in f:
         toks = line.strip().split()
         vals = [fcn(tok) for tok, fcn in zip(toks, ANI_TYPES)]
