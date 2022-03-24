@@ -2,7 +2,7 @@ import os
 import subprocess
 import tempfile
 
-from .parse import parse_pairwise_ani
+from .parse import parse_ani
 
 class AniApplication:
     def __init__(self, db, work_dir=None):
@@ -37,7 +37,7 @@ class AniApplication:
 
         ani_results = {s: None for s in subjects}
         with open(ani_fp) as f:
-            for ani_result in parse_pairwise_ani(f):
+            for ani_result in parse_ani(f):
                 subject = subject_fps[ani_result["ref_fp"]]
                 ani_results[subject] = ani_result
 

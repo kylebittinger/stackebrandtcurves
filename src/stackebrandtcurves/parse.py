@@ -17,7 +17,7 @@ ANI_FIELDS = [
     "query_fp", "ref_fp", "ani", "fragments_aligned", "fragments_total"]
 ANI_TYPES = [str, str, float, int, int]
 
-def parse_pairwise_ani(f):
+def parse_ani(f):
     for line in f:
         toks = line.strip().split()
         vals = [fcn(tok) for tok, fcn in zip(toks, ANI_TYPES)]
