@@ -30,4 +30,3 @@ def test_main(tmp_path):
     with open(observed_output_fp) as f:
         observed_output = f.read()
     assert observed_output == expected_output
-

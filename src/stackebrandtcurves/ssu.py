@@ -115,9 +115,11 @@ class SearchApplication:
         with open(hits_fp) as f:
             hits = aligner.parse(f)
             for hit in hits:
+                nt_positions = len(hit["qseq"])
+                nt_matches = count_matches(hit["qseq"], hit["sseq"])
+                pctid = 100 * (nt_matches / nt_positions)
                 query = self.db.seqid_assemblies[hit["qseqid"]]
                 subject = self.db.seqid_assemblies[hit["sseqid"]]
-                pctid = hit["pident"]
                 if query.accession != subject.accession:
                     yield SearchResult(
                         query, subject, pctid,
@@ -127,7 +129,7 @@ class SearchApplication:
 
 
 class PctidAligner:
-    field_names = ["qseqid", "sseqid", "pident"]
+    field_names = ["qseqid", "sseqid", "pident", "qseq", "sseq"]
     hits_fp = "refseq_16S_hits.txt"
 
     def __init__(self, fasta_fp):
@@ -167,7 +169,7 @@ class PctidAligner:
             "--userout", hits_fp,
             "--iddef", "2", "--id", min_id,
             "--userfields",
-            "query+target+id2",
+            "query+target+id2+qrow+trow",
             "--maxaccepts", str(max_hits),
         ]
         if threads is not None:
@@ -198,7 +200,7 @@ class SearchResult:
         self.subject_seqid = subject_seqid
 
     def format_output(self):
-        pctid_format = round(float(self.pctid), 1)
+        pctid_format = round(float(self.pctid), 2)
         return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(
             self.query.accession, self.subject.accession,
             self.query_seqid, self.subject_seqid,
