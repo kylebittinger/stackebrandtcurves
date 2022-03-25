@@ -2,7 +2,7 @@ import collections
 import os
 
 from stackebrandtcurves.refseq import RefSeq
-from stackebrandtcurves.ssu import count_matches, limit_hits
+from stackebrandtcurves.search import count_matches, limit_hits
 
 def test_count_matches():
     s1 = "ACGTNNY-G"

@@ -1,5 +1,5 @@
 from .ani import FastAni
-from .ssu import Vsearch, limit_hits
+from .search import Vsearch, limit_hits
 
 class StackebrandtApp:
     def __init__(self, db, search_dir=None, ani_dir=None):
