@@ -3,7 +3,7 @@ import re
 import subprocess
 
 from .download import get_url
-from .parse import parse_fasta, parse_assembly_summary
+from .parse import parse_fasta, parse_assembly_summary, parse_accessions
 
 class RefSeq:
     summary_url = (
@@ -28,6 +28,10 @@ class RefSeq:
             get_url(self.summary_url, fp)
         return fp
 
+    def load(self):
+        self.load_assemblies()
+        self.load_seqs()
+
     def load_assemblies(self):
         self.download_summary()
         with open(self.assembly_summary_fp) as f:
@@ -36,6 +40,25 @@ class RefSeq:
         return self.assemblies
 
     def load_seqs(self):
+        if os.path.exists(self.accession_fp):
+            self.reload_seqs()
+        else:
+            self.collect_seqs()
+            self.save_seqs()
+
+    def reload_seqs(self):
+        with open(self.ssu_fasta_fp) as f:
+            for seqid, seq in parse_fasta(f):
+                self.seqs[seqid] = seq
+        with open(self.accession_fp) as f:
+            for seqid, accession in parse_accessions(f):
+                self.seqid_accessions[seqid] = accession
+                if accession in self.accession_seqids:
+                    self.accession_seqids[accession].append(seqid)
+                else:
+                    self.accession_seqids[accession] = [seqid]
+
+    def collect_seqs(self):
         for accession in self.assemblies.keys():
             seqs = list(self.get_16S_seqs(accession))
             self.accession_seqids[accession] = [seqid for seqid, seq in seqs]
@@ -47,6 +70,9 @@ class RefSeq:
         with open(self.ssu_fasta_fp, "w") as f:
             for seqid, seq in self.seqs.items():
                 f.write(">{0}\n{1}\n".format(seqid, seq))
+        with open(self.accession_fp, "w") as f:
+            for seqid, accession in self.seqid_accessions.items():
+                f.write("{0}\t{1}\n".format(seqid, accession))
 
     def save_filtered_seqs(self, fp, seen):
         with open(fp, "w") as f:
@@ -105,6 +131,10 @@ class RefSeq:
     @property
     def ssu_fasta_fp(self):
         return os.path.join(self.data_dir, "refseq_16S.fasta")
+
+    @property
+    def accession_fp(self):
+        return os.path.join(self.data_dir, "refseq_16S_accessions.txt")
 
 
 class RefseqAssembly:

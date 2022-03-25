@@ -113,6 +113,12 @@ def load_fasta(filepath, trim_desc=True):
         seqs = parse_fasta(f, trim_desc=trim_desc)
         return dict(seqs)
 
+def parse_accessions(f):
+    for line in f:
+        if line.startswith("#"):
+            continue
+        line = line.strip()
+        yield line.split("\t")
 
 def parse_greengenes_accessions(f):
     for line in f:

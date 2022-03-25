@@ -7,8 +7,7 @@ from stackebrandtcurves.application import StackebrandtApp
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
 refseq = RefSeq(DATA_DIR)
-refseq.load_assemblies()
-refseq.load_seqs()
+refseq.load()
 
 def test_main_search():
     app = StackebrandtApp(refseq)

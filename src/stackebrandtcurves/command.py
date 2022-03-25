@@ -59,9 +59,7 @@ def main(argv=None):
     random.seed(args.seed)
 
     db = RefSeq(args.data_dir)
-    db.load_assemblies()
-    db.load_seqs()
-    db.save_seqs()
+    db.load()
 
     app = StackebrandtApp(db, args.search_dir, args.ani_dir)
     app.min_pctid = args.min_pctid
