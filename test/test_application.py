@@ -12,7 +12,7 @@ refseq.load_seqs()
 app = StackebrandtApp(refseq)
 
 def test_main_search():
-    hits = app.search("lcl|NZ_CP015402.2_rrna_41")
+    hits = app.search('GCF_001688845.2')
     pctids = {hit["sseqid"]: round(hit["pident"], 3) for hit in hits}
     assert pctids == EXPECTED_PCTIDS
 

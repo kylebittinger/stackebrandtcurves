@@ -6,8 +6,7 @@ import tempfile
 
 
 class Vsearch:
-    def __init__(self, db, work_dir=None):
-        self.db = db
+    def __init__(self, work_dir=None):
         if work_dir is not None:
             if not os.path.exists(work_dir):
                 os.makedirs(work_dir)
@@ -16,57 +15,12 @@ class Vsearch:
             self._work_dir_obj = tempfile.TemporaryDirectory()
             self.work_dir = self._work_dir_obj.name
 
+    @property
+    def filtered_fp(self):
+        return self.get_temp_fp("filtered_subject.fasta")
+
     def get_temp_fp(self, filename):
         return os.path.join(self.work_dir, filename)
-
-    def exhaustive_search(
-            self, query_seqid, query_seq, min_pctid=90.0,
-            max_hits=10000, threads=None):
-        already_found = set()
-        already_found.add(query_seqid)
-
-        hits = self.search_seq(
-            query_seqid, query_seq, min_pctid=min_pctid,
-            max_hits=max_hits, threads=threads)
-        for hit in hits:
-            already_found.add(hit.subject_seqid)
-            yield hit
-
-        for trial in range(10):
-            print("Follow-up search, trial {0}".format(trial + 1))
-            filtered_subject_fp = self.get_temp_fp("filtered_subject.fasta")
-            self.db.save_filtered_seqs(filtered_subject_fp, already_found)
-            hits = self.search_seq(
-                query_seqid, query_seq, min_pctid=min_pctid,
-                max_hits=max_hits, threads=threads,
-                subject_fp=filtered_subject_fp)
-            n_hits = 0
-            for hit in hits:
-                n_hits += 1
-                already_found.add(hit.subject_seqid)
-                yield hit
-            if n_hits == 0:
-                break
-        print("Exhausted 10 search trials")
-
-    def search_seq(
-            self, query_seqid, query_seq, min_pctid=90.0,
-            max_hits=100000, threads=None, subject_fp=None):
-        clear_db = subject_fp is not None
-        if subject_fp is None:
-            subject_fp = self.db.ssu_fasta_fp
-
-        hits = self.search_once(
-            query_seqid, query_seq, subject_fp, min_pctid=min_pctid,
-            max_hits=max_hits, threads=threads, clear_db=clear_db)
-
-        for hit in hits:
-            query = self.db.seqid_assemblies[hit["qseqid"]]
-            subject = self.db.seqid_assemblies[hit["sseqid"]]
-            if query.accession != subject.accession:
-                yield SearchResult(
-                    query, subject, hit["pident"],
-                    hit["qseqid"], hit["sseqid"], hit)
 
     def search_once(
             self, query_seqid, query_seq, subject_fp, min_pctid=90.0,
@@ -183,6 +137,17 @@ def limit_results(results, max_results_pctid=None):
             pctid_results = random.sample(pctid_results, k=max_results_pctid)
         for result in pctid_results:
             yield result
+
+def limit_hits(hits, nmax):
+    by_pctid = collections.defaultdict(list)
+    for hit in hits:
+        by_pctid[hit["pident"]].append(hit)
+    for pctid, pctid_hits in by_pctid.items():
+        if len(pctid_hits) > nmax:
+            pctid_hits = random.sample(pctid_hits, k=nmax)
+        for hit in pctid_hits:
+            yield hit
+
 
 AMBIGUOUS_BASES = {
     "-": "-",

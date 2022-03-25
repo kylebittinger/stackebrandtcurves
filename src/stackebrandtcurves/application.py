@@ -1,10 +1,10 @@
 from .ani import FastAni
-from .ssu import Vsearch, limit_results
+from .ssu import Vsearch, limit_hits
 
 class StackebrandtApp:
     def __init__(self, db, search_dir=None, ani_dir=None):
         self.db = db
-        self.search_app = Vsearch(db, search_dir)
+        self.search_app = Vsearch(search_dir)
         self.ani_app = FastAni(ani_dir)
         self.min_pctid = 90.0
         self.max_hits = 100000
@@ -13,14 +13,15 @@ class StackebrandtApp:
         self.max_unique_pctid = 100
 
     def run(self, query_accession):
-        query_seqid = self.db.get_query_seqid(query_accession)
-        hits = self.search(query_seqid)
+        hits = self.search(query_accession)
+        if not hits:
+            return
 
         seqids = [hit["sseqid"] for hit in hits]
         accessions = [self.db.seqid_accessions[s] for s in seqids]
-        print(accessions)
         ani_results = self.calculate_ani(query_accession, accessions)
 
+        query_seqid = hits[0]['qseqid']
         for hit, ani_result in zip(hits, ani_results):
             seqid = hit["sseqid"]
             accession = self.db.seqid_accessions[seqid]
@@ -28,23 +29,13 @@ class StackebrandtApp:
                 query_accession, accession, query_seqid, seqid,
                 hit, ani_result)
 
-    def search(self, query_seqid):
-        query_seq = self.db.seqs[query_seqid]
-        
+    def search(self, query_accession):
         if self.multi_stage_search:
-            results = self.search_app.exhaustive_search(
-                query_seqid, query_seq,
-                min_pctid=self.min_pctid, max_hits=self.max_hits,
-                threads=self.threads)
+            hits = self.exhaustive_search(query_accession)
         else:
-            results = self.search_app.search_seq(
-                query_seqid, query_seq,
-                min_pctid=self.min_pctid, max_hits=self.max_hits,
-                threads=self.threads)
-
-        results = limit_results(results, self.max_unique_pctid)
-        hits = [r.hit for r in results]
-        return hits
+            hits = self.regular_search(query_accession)
+        hits = limit_hits(hits, self.max_unique_pctid)
+        return list(hits)
 
     def calculate_ani(self, query_accession, subject_accessions):
         query_fp = self.db.collect_genome(query_accession)
@@ -63,6 +54,40 @@ class StackebrandtApp:
 
         return [subject_results[a] for a in subject_accessions]
 
+    def regular_search(self, query_accession, subject_fp=None):
+        clear_db = subject_fp is not None
+        if subject_fp is None:
+            subject_fp = self.db.ssu_fasta_fp
+        query_seqids = self.db.accession_seqids[query_accession]
+        query_seqid = query_seqids[0]
+        query_seq = self.db.seqs[query_seqid]
+        hits = self.search_app.search_once(
+            query_seqid, query_seq, subject_fp, min_pctid=self.min_pctid,
+            max_hits=self.max_hits, threads=self.threads, clear_db=clear_db)
+        hits = [hit for hit in hits if hit['sseqid'] not in query_seqids]
+        return hits
+
+    def exhaustive_search(self, query_accession):
+        already_found = set()
+
+        hits = self.regular_search(query_accession)
+        for hit in hits:
+            already_found.add(hit['sseqid'])
+            yield hit
+
+        subject_fp = self.search_app.filtered_fp
+        for trial in range(10):
+            print("Follow-up search, trial {0}".format(trial + 1))
+            self.db.save_filtered_seqs(subject_fp, already_found)
+            hits = self.regular_search(query_accession, subject_fp)
+            n_hits = 0
+            for hit in hits:
+                n_hits += 1
+                already_found.add(hit['sseqid'])
+                yield hit
+            if n_hits == 0:
+                return
+        print("Exhausted 10 search trials")
 
 class AppResult:
     output_fields = [
