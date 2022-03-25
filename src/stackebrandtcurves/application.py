@@ -44,7 +44,8 @@ class StackebrandtApp:
         subject_fps = {
             self.db.collect_genome(a): a for a in unique_subjects}
 
-        ani_results = self.ani_app.run(query_fp, subject_fps.keys())
+        ani_results = self.ani_app.run(
+            query_fp, subject_fps.keys(), threads=self.threads)
 
         subject_results = {s: None for s in unique_subjects}
         for res in ani_results:
@@ -88,6 +89,7 @@ class StackebrandtApp:
             if n_hits == 0:
                 return
         print("Exhausted 10 search trials")
+
 
 class AppResult:
     output_fields = [
