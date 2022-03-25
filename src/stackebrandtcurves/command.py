@@ -16,7 +16,7 @@ def main(argv=None):
     )
     p.add_argument(
         "--min-pctid", type=float, default=90.0,
-        help="Minimum 16S percent ID",
+        help="Minimum 16S percent ID (default: %(default)s)",
     )
     p.add_argument(
         "--max-hits", type=int, default=100000,
@@ -26,14 +26,15 @@ def main(argv=None):
         "--max-unique-pctid", type=int, default=100,
         help=(
             "Maximum number of ANI comparisons for each unique value of 16S "
-            "percent ID"))
+            "percent ID (default: %(default)s)"),
+    )
     p.add_argument(
         "--num-threads", type=int,
         help="Number of threads for 16S percent ID (default: use all CPUs)",
     )
     p.add_argument(
         "--seed", type=int, default=42,
-        help="Random number seed",
+        help="Random number seed (default: %(default)s)",
     )
     p.add_argument(
         "--multi-stage-search", action="store_true",
