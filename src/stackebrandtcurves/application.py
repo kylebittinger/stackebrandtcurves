@@ -52,7 +52,7 @@ class StackebrandtApp:
         subject_fps = {
             self.db.collect_genome(a): a for a in unique_subjects}
 
-        ani_results = self.ani_app.get_ani(query_fp, subject_fps.keys())
+        ani_results = self.ani_app.run(query_fp, subject_fps.keys())
 
         subject_results = {s: None for s in unique_subjects}
         for res in ani_results:

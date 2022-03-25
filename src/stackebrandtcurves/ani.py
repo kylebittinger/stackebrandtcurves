@@ -4,7 +4,7 @@ import tempfile
 
 from .parse import parse_ani
 
-class AniApplication:
+class FastAni:
     def __init__(self, work_dir=None):
         if work_dir is not None:
             if not os.path.exists(work_dir):
@@ -14,7 +14,7 @@ class AniApplication:
             self._work_dir_obj = tempfile.TemporaryDirectory()
             self.work_dir = self._work_dir_obj.name
 
-    def get_ani(self, query_genome_fp, subject_genome_fps):
+    def run(self, query_genome_fp, subject_genome_fps):
         reflist_fp = os.path.join(self.work_dir, "ref_list.txt")
         with open(reflist_fp, "w") as f:
             for subject_fp in subject_genome_fps:
