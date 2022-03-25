@@ -2,7 +2,6 @@ import collections
 import os
 
 from stackebrandtcurves.refseq import RefSeq, parse_desc
-from stackebrandtcurves.assembly import RefseqAssembly
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
