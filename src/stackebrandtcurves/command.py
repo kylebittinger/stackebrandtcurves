@@ -2,7 +2,6 @@ import argparse
 import random
 
 from .refseq import RefSeq
-from .ssu import SearchApplication, limit_results
 from .application import StackebrandtApp, AppResult
 
 def main(argv=None):
@@ -63,9 +62,8 @@ def main(argv=None):
     refseq.load_assemblies()
     refseq.load_seqs()
     refseq.save_seqs()
-    search_app = SearchApplication(refseq, work_dir=args.search_dir)
 
-    app = StackebrandtApp(refseq, search_app, args.ani_dir)
+    app = StackebrandtApp(refseq, args.search_dir, args.ani_dir)
     app.min_pctid = args.min_pctid
     app.max_hits = args.max_hits
     app.max_unique_pctid = args.max_unique_pctid

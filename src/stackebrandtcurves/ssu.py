@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 
 
-class SearchApplication:
+class Vsearch:
     def __init__(self, db, work_dir=None):
         self.db = db
         if work_dir is not None:

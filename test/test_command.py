@@ -1,22 +1,9 @@
-import collections
 import os
 
-from stackebrandtcurves.command import main, limit_results
-from stackebrandtcurves.parse import parse_output
+from stackebrandtcurves.command import main
+from stackebrandtcurves.application import AppResult
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-EXPECTED_OUTPUT_FP = os.path.join(DATA_DIR, "muribaculum_output.txt")
-
-MockResult = collections.namedtuple("SearchResult", ["pctid"])
-
-def test_limit_results():
-    pctids = [90.1, 90.1, 90.1, 90.0]
-    results = [MockResult(x) for x in pctids]
-    limited_results = list(limit_results(results, 2))
-    print(limited_results)
-    print(results)
-    assert limited_results == results[1:]
-
 
 def test_main(tmp_path):
     output_fp = tmp_path / "output.txt"
@@ -27,7 +14,7 @@ def test_main(tmp_path):
     ]
     main(args)
     with open(output_fp) as f:
-        output = list(parse_output(f))
+        output = list(AppResult.parse(f))
     pctids = {x["subject_seqid"]: x["pctid"] for x in output}
     assert pctids == EXPECTED_PCTIDS
 

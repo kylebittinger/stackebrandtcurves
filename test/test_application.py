@@ -2,7 +2,6 @@ import collections
 import os
 
 from stackebrandtcurves.refseq import RefSeq
-from stackebrandtcurves.ssu import SearchApplication
 from stackebrandtcurves.application import StackebrandtApp
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -10,8 +9,7 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 refseq = RefSeq(DATA_DIR)
 refseq.load_assemblies()
 refseq.load_seqs()
-search_app = SearchApplication(refseq)
-app = StackebrandtApp(refseq, search_app)
+app = StackebrandtApp(refseq)
 
 def test_main_search():
     hits = app.search("lcl|NZ_CP015402.2_rrna_41")

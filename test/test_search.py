@@ -1,7 +1,8 @@
+import collections
 import os
 
 from stackebrandtcurves.refseq import RefSeq
-from stackebrandtcurves.ssu import SearchApplication, count_matches
+from stackebrandtcurves.ssu import Vsearch, count_matches, limit_results
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
@@ -15,8 +16,8 @@ def test_search_seq():
     refseq = RefSeq(DATA_DIR)
     refseq.load_assemblies()
     refseq.load_seqs()
-    db = SearchApplication(refseq)
-    hits = db.search_seq(
+    v = Vsearch(refseq)
+    hits = v.search_seq(
         "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)
     assert len(hits) == 11
@@ -29,14 +30,23 @@ def test_exhaustive_search():
     refseq = RefSeq(DATA_DIR)
     refseq.load_assemblies()
     refseq.load_seqs()
-    db = SearchApplication(refseq)
-    hits = db.exhaustive_search(
+    v = Vsearch(refseq)
+    hits = v.exhaustive_search(
         "lcl|NZ_CP015402.2_rrna_41", TEST_SEQ, min_pctid = 95.0)
     hits = list(hits)
     assert len(hits) == 11
     last_hit = hits[-1]
     assert last_hit.subject.accession == "GCF_016696845.1"
 
+MockResult = collections.namedtuple("SearchResult", ["pctid"])
+
+def test_limit_results():
+    pctids = [90.1, 90.1, 90.1, 90.0]
+    results = [MockResult(x) for x in pctids]
+    limited_results = list(limit_results(results, 2))
+    print(limited_results)
+    print(results)
+    assert limited_results == results[1:]
 
 TEST_SEQ = (
     "ACAACGAAGAGTTTGATCCTGGCTCAGGATGAACGCTAGCGACAGGCCTAACACATGCAAGTCGAGGGGCAGCGGGGAGC"

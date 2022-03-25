@@ -1,10 +1,10 @@
 from .ani import FastAni
-from .ssu import limit_results
+from .ssu import Vsearch, limit_results
 
 class StackebrandtApp:
-    def __init__(self, db, search_app, ani_dir=None):
+    def __init__(self, db, search_dir=None, ani_dir=None):
         self.db = db
-        self.search_app = search_app
+        self.search_app = Vsearch(db, search_dir)
         self.ani_app = FastAni(ani_dir)
         self.min_pctid = 90.0
         self.max_hits = 100000
