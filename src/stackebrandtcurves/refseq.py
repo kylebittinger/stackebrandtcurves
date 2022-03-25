@@ -3,8 +3,7 @@ import re
 import subprocess
 
 from .download import get_url
-from .parse import parse_fasta
-from .assembly import RefseqAssembly
+from .parse import parse_fasta, parse_assembly_summary
 
 class RefSeq:
     summary_url = (
@@ -122,6 +121,37 @@ class RefSeq:
         return os.path.join(self.data_dir, "refseq_16S.fasta")
 
 
+class RefseqAssembly:
+    def __init__(self, assembly_accession, ftp_path, **kwargs):
+        self.accession = assembly_accession
+        self.ftp_path = ftp_path
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
+    @classmethod
+    def parse(cls, f):
+        for rec in parse_assembly_summary(f):
+            yield cls(**rec)
+
+    @property
+    def base_url(self):
+        return re.sub("^ftp://", "https://", self.ftp_path)
+
+    @property
+    def basename(self):
+        return os.path.basename(self.ftp_path)
+
+    @property
+    def rna_url(self):
+        return "{0}/{1}_rna_from_genomic.fna.gz".format(
+            self.base_url, self.basename)
+
+    @property
+    def genome_url(self):
+        return "{0}/{1}_genomic.fna.gz".format(
+            self.base_url, self.basename)
+
+
 def is_full_length_16S(desc):
     accession, attrs = parse_desc(desc)
     product = attrs.get("product")
@@ -131,6 +161,7 @@ def is_full_length_16S(desc):
     location = attrs.get("location", "")
     is_full_length = (">" not in location) and ("<" not in location)
     return is_full_length
+
 
 def parse_desc(desc):
     accession, sep, rest = desc.partition(" ")
