@@ -58,12 +58,12 @@ def main(argv=None):
             args.assembly_accession)
     random.seed(args.seed)
 
-    refseq = RefSeq(args.data_dir)
-    refseq.load_assemblies()
-    refseq.load_seqs()
-    refseq.save_seqs()
+    db = RefSeq(args.data_dir)
+    db.load_assemblies()
+    db.load_seqs()
+    db.save_seqs()
 
-    app = StackebrandtApp(refseq, args.search_dir, args.ani_dir)
+    app = StackebrandtApp(db, args.search_dir, args.ani_dir)
     app.min_pctid = args.min_pctid
     app.max_hits = args.max_hits
     app.max_unique_pctid = args.max_unique_pctid
