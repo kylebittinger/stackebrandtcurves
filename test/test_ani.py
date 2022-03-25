@@ -1,17 +1,18 @@
 import os
 
+from stackebrandtcurves.refseq import RefSeq
 from stackebrandtcurves.ani import FastAni
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
-def genome_fp(fname):
-    return os.path.join(DATA_DIR, 'genome_fasta', fname)
+db = RefSeq(DATA_DIR)
+db.load()
 
 def test_fast_ani():
-    query_fp = genome_fp('GCF_001688845.2_ASM168884v2_genomic.fna')
+    query_fp = db.collect_genome('GCF_001688845.2')
     subject_fps = [
-        genome_fp('GCF_002201515.1_ASM220151v1_genomic.fna'),
-        genome_fp('GCF_003024805.1_ASM302480v1_genomic.fna'),
+        db.collect_genome('GCF_002201515.1'),
+        db.collect_genome('GCF_003024805.1'),
         ]
 
     app = FastAni()
