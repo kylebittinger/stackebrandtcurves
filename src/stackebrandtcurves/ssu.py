@@ -66,7 +66,7 @@ class SearchApplication:
             if query.accession != subject.accession:
                 yield SearchResult(
                     query, subject, hit["pident"],
-                    hit["qseqid"], hit["sseqid"])
+                    hit["qseqid"], hit["sseqid"], hit)
 
     def search_once(
             self, query_seqid, query_seq, subject_fp, min_pctid=90.0,
@@ -155,13 +155,15 @@ class PctidAligner:
 class SearchResult:
     def __init__(
             self, query, subject, pctid=None,
-            query_seqid=None, subject_seqid=None):
+            query_seqid=None, subject_seqid=None,
+            hit=None):
         self.query = query
         self.subject = subject
         self.pctid = pctid
         self.ani = None
         self.query_seqid = query_seqid
         self.subject_seqid = subject_seqid
+        self.hit = hit
 
     def format_output(self):
         pctid_format = round(float(self.pctid), 2)

@@ -15,8 +15,17 @@ class RefSeq:
     def __init__(self, data_dir="refseq_data"):
         self.data_dir = data_dir
         self.assemblies = {}
+        self.seqs = {}
         self.assembly_seqs = {}
+        self.accession_seqids = {}
         self.seqid_assemblies = {}
+        self.seqid_accessions = {}
+
+    def get_query_seqid(self, accession):
+        seqids = self.accession_seqids.get(accession)
+        if seqids:
+            return seqids[0]
+        return None
 
     @property
     def assembly_summary_fp(self):
@@ -34,13 +43,16 @@ class RefSeq:
             for assembly in RefseqAssembly.parse(f):
                 self.assemblies[assembly.accession] = assembly
         return self.assemblies
-        
+
     def load_seqs(self):
         for assembly in self.assemblies.values():
             seqs = list(self.get_16S_seqs(assembly))
             self.assembly_seqs[assembly.accession] = seqs
+            self.accession_seqids[assembly.accession] = [seqid for seqid, seq in seqs]
             for seqid, seq in seqs:
+                self.seqs[seqid] = seq
                 self.seqid_assemblies[seqid] = assembly
+                self.seqid_accessions[seqid] = assembly.accession
 
     def save_seqs(self):
         with open(self.ssu_fasta_fp, "w") as f:
@@ -62,6 +74,10 @@ class RefSeq:
     def genome_fp(self, assembly):
         genome_filename = "{0}_genomic.fna".format(assembly.basename)
         return os.path.join(self.genome_dir, genome_filename)
+
+    def collect_genome(self, accession):
+        assembly = self.assemblies[accession]
+        return self.download_genome(assembly)
 
     def download_genome(self, assembly):
         genome_fp = self.genome_fp(assembly)
