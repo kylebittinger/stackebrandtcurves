@@ -1,9 +1,10 @@
+import io
 import os
 import re
+import shutil
 import subprocess
+import urllib.request
 
-from .download import get_url
-from .parse import parse_fasta, parse_assembly_summary, parse_accessions
 
 class RefSeq:
     summary_url = (
@@ -138,6 +139,15 @@ class RefSeq:
 
 
 class RefseqAssembly:
+    fields = [
+        "assembly_accession", "bioproject", "biosample", "wgs_master",
+        "refseq_category", "taxid", "species_taxid", "organism_name",
+        "infraspecific_name", "isolate", "version_status", "assembly_level",
+        "release_type", "genome_rep", "seq_rel_date", "asm_name", "submitter",
+        "gbrs_paired_asm", "paired_asm_comp", "ftp_path",
+        "excluded_from_refseq", "relation_to_type_material",
+    ]
+
     def __init__(self, assembly_accession, ftp_path, **kwargs):
         self.accession = assembly_accession
         self.ftp_path = ftp_path
@@ -146,8 +156,15 @@ class RefseqAssembly:
 
     @classmethod
     def parse(cls, f):
-        for rec in parse_assembly_summary(f):
-            yield cls(**rec)
+        for line in f:
+            line = line.rstrip("\n")
+            if line.startswith("#") or (line == ""):
+                continue
+            toks = line.split("\t")
+            vals = dict(zip(cls.fields, toks))
+            if vals["ftp_path"] == "na":
+                continue
+            yield cls(**vals)
 
     @property
     def base_url(self):
@@ -166,6 +183,32 @@ class RefseqAssembly:
     def genome_url(self):
         return "{0}/{1}_genomic.fna.gz".format(
             self.base_url, self.basename)
+
+
+def parse_fasta(f):
+    f = iter(f)
+    try:
+        desc = next(f).strip()[1:]
+    except StopIteration:
+        return
+    seq = io.StringIO()
+    for line in f:
+        line = line.strip()
+        if line.startswith(">"):
+            yield desc, seq.getvalue()
+            desc = line[1:]
+            seq = io.StringIO()
+        else:
+            seq.write(line)
+    yield desc, seq.getvalue()
+
+
+def parse_accessions(f):
+    for line in f:
+        if line.startswith("#"):
+            continue
+        line = line.strip()
+        yield line.split("\t")
 
 
 def is_full_length_16S(desc):
@@ -187,3 +230,10 @@ def parse_desc(desc):
         attr, sep, val = tok.partition("=")
         attrs[attr] = val
     return accession, attrs
+
+
+def get_url(url, fp):
+    print("Downloading {0}".format(url))
+    with urllib.request.urlopen(url) as resp, open(fp, 'wb') as f:
+        shutil.copyfileobj(resp, f)
+    return fp
