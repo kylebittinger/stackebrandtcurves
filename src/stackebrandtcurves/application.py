@@ -1,10 +1,11 @@
+from .ani import FastAni
 from .ssu import limit_results
 
 class StackebrandtApp:
-    def __init__(self, db, search_app, ani_app):
+    def __init__(self, db, search_app, ani_dir=None):
         self.db = db
         self.search_app = search_app
-        self.ani_app = ani_app
+        self.ani_app = FastAni(ani_dir)
         self.min_pctid = 90.0
         self.max_hits = 100000
         self.threads = None

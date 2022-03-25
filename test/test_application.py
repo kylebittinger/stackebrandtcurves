@@ -2,7 +2,6 @@ import collections
 import os
 
 from stackebrandtcurves.refseq import RefSeq
-from stackebrandtcurves.ani import FastAni
 from stackebrandtcurves.ssu import SearchApplication
 from stackebrandtcurves.application import StackebrandtApp
 
@@ -12,8 +11,7 @@ refseq = RefSeq(DATA_DIR)
 refseq.load_assemblies()
 refseq.load_seqs()
 search_app = SearchApplication(refseq)
-ani_app = FastAni()
-app = StackebrandtApp(refseq, search_app, ani_app)
+app = StackebrandtApp(refseq, search_app)
 
 def test_main_search():
     hits = app.search("lcl|NZ_CP015402.2_rrna_41")
