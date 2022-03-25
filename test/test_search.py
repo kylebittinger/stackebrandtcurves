@@ -32,7 +32,7 @@ def test_exhaustive_search():
     observed_pctids = {hit['sseqid']: round(hit['pident'], 2) for hit in hits}
     assert observed_pctids == EXPECTED_PCTIDS
 
-def test_limit_results():
+def test_limit_hits():
     hits = [{'pident': x} for x in [90.1, 90.1, 90.1, 90.0]]
     observed = list(limit_hits(hits, 2))
     expected = [{'pident': x} for x in [90.1, 90.1, 90.0]]

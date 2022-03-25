@@ -106,37 +106,6 @@ class PctidAligner:
             if hit["qseqid"] != hit["sseqid"]:
                 yield hit
 
-class SearchResult:
-    def __init__(
-            self, query, subject, pctid=None,
-            query_seqid=None, subject_seqid=None,
-            hit=None):
-        self.query = query
-        self.subject = subject
-        self.pctid = pctid
-        self.ani = None
-        self.query_seqid = query_seqid
-        self.subject_seqid = subject_seqid
-        self.hit = hit
-
-    def format_output(self):
-        pctid_format = round(float(self.pctid), 2)
-        return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(
-            self.query.accession, self.subject.accession,
-            self.query_seqid, self.subject_seqid,
-            pctid_format, self.ani["ani"],
-            self.ani["fragments_aligned"], self.ani["fragments_total"],
-        )
-
-def limit_results(results, max_results_pctid=None):
-    by_pctid = collections.defaultdict(list)
-    for result in results:
-        by_pctid[result.pctid].append(result)
-    for pctid, pctid_results in by_pctid.items():
-        if len(pctid_results) > max_results_pctid:
-            pctid_results = random.sample(pctid_results, k=max_results_pctid)
-        for result in pctid_results:
-            yield result
 
 def limit_hits(hits, nmax):
     by_pctid = collections.defaultdict(list)
