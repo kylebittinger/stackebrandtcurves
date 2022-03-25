@@ -64,11 +64,12 @@ class StackebrandtApp:
 
 
 class AppResult:
-    OUTPUT_FIELDS = [
+    output_fields = [
         "query_assembly", "subject_assembly", "query_seqid", "subject_seqid",
         "pctid", "ani", "fragments_aligned", "fragments_total"
     ]
-    OUTPUT_TYPES = [str, str, str, str, float, float, int, int]
+    output_types = [str, str, str, str, float, float, int, int]
+    output_header = "\t".join(output_fields) + "\n"
 
     def __init__(
             self, query_accession, subject_accession,
@@ -85,19 +86,14 @@ class AppResult:
         next(f) # skip header
         for line in f:
             toks = line.strip().split("\t")
-            vals = [fcn(tok) for tok, fcn in zip(toks, cls.OUTPUT_TYPES)]
-            yield dict(zip(cls.OUTPUT_FIELDS, vals))
-
-    @classmethod
-    def write_header(cls, f):
-        f.write("\t".join(cls.OUTPUT_FIELDS))
-        f.write("\n")
+            vals = [fcn(tok) for tok, fcn in zip(toks, cls.output_types)]
+            yield dict(zip(cls.output_fields, vals))
 
     def format_output(self):
         pident = self.hit["pident"]
         pident_format = round(float(pident), 2)
         return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(
-            self.query.accession, self.subject.accession,
+            self.query_accession, self.subject_accession,
             self.query_seqid, self.subject_seqid,
             pident_format, self.ani_result["ani"],
             self.ani_result["fragments_aligned"],

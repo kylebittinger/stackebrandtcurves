@@ -4,6 +4,7 @@ import random
 from .refseq import RefSeq
 from .ssu import SearchApplication, limit_results
 from .ani import AniApplication
+from .application import StackebrandtApp, AppResult
 
 def main(argv=None):
     p = argparse.ArgumentParser()
@@ -57,43 +58,25 @@ def main(argv=None):
     if args.output_file is None:
         args.output_file = "assembly_{0}_pctid_ani.txt".format(
             args.assembly_accession)
-    output_file = open(args.output_file, "w")
-    output_file.write(
-        "query_assembly\tsubject_assembly\t"
-        "query_seqid\tsubject_seqid\t"
-        "pctid\tani\tfragments_aligned\tfragments_total\n")
-
     random.seed(args.seed)
 
     refseq = RefSeq(args.data_dir)
     refseq.load_assemblies()
     refseq.load_seqs()
     refseq.save_seqs()
-
     search_app = SearchApplication(refseq, work_dir=args.search_dir)
     ani_app = AniApplication(refseq, work_dir=args.ani_dir)
 
-    query_seqs = refseq.assembly_seqs[args.assembly_accession]
-    query_seqid, query_seq = query_seqs[0]
+    app = StackebrandtApp(refseq, search_app, ani_app)
+    app.min_pctid = args.min_pctid
+    app.max_hits = args.max_hits
+    app.max_unique_pctid = args.max_unique_pctid
+    app.threads = args.num_threads
+    app.multi_stage_search = args.multi_stage_search
 
-    if args.multi_stage_search:
-        results = search_app.exhaustive_search(
-            query_seqid, query_seq,
-            min_pctid=args.min_pctid, max_hits=args.max_hits,
-            threads=args.num_threads)
-    else:
-        results = search_app.search_seq(
-            query_seqid, query_seq,
-            min_pctid=args.min_pctid, max_hits=args.max_hits,
-            threads=args.num_threads)
-    results = limit_results(results, args.max_unique_pctid)
-    results = list(results)
+    results = app.run(args.assembly_accession)
 
-    ani_results = ani_app.compute_ani(results)
-    for search_result, ani_result in zip(results, ani_results):
-        try:
-            search_result.ani = ani_result
-            output_file.write(search_result.format_output())
-            output_file.flush()
-        except Exception as e:
-            print(e)
+    with open(args.output_file, "w") as f:
+        f.write(AppResult.output_header)
+        for result in results:
+            f.write(result.format_output())
