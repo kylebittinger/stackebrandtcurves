@@ -6,12 +6,12 @@ identity (ANI) and 16S rRNA gene similarity for bacterial genomes.
 ## Summary
 
 "Stackebrandt curves" aren't really a thing; I made up the name. The
-idea comes from a 1994 paper by Stackebrandt and Goebel[^1], which may
-have been the first to compare 16S rRNA gene similarity with
-whole-genome similarity. In that paper, the authors used DNA-DNA
-hybridization results rather than ANI to measure genome similarity. In
-a later study, Kim et al.[^2] found that ANI followed the same
-pattern.
+idea comes from a 1994 paper by Stackebrandt and Goebel[^1] in which
+the authors compared 16S rRNA gene similarity and whole-genome
+similarity for bacteria. In that paper, the authors used DNA-DNA
+hybridization results rather than ANI as a measure of genome
+similarity. In a later study, Kim et al.[^2] found that the earlier
+results hold true when ANI is used.
 
 To a high degree, 16S gene similarity and full-genome similarity are
 correlated. However, Stackebrandt and Goebel observed that 16S
