@@ -2,7 +2,6 @@ import collections
 import os
 
 from stackebrandtcurves.refseq import RefSeq, parse_desc
-from stackebrandtcurves.assembly import RefseqAssembly
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
@@ -32,18 +31,18 @@ def test_parse_desc():
 def test_load():
     db = RefSeq(DATA_DIR)
     db.load_assemblies()
+
     assert len(db.assemblies) == 21
+
     a = db.assemblies["GCF_001688845.2"]
     assert a.accession == "GCF_001688845.2"
     assert a.bioproject == "PRJNA224116"
 
-def test_ssu_seqs():
+def test_get_16S_seqs():
     db = RefSeq(DATA_DIR)
-    rna_fp = db.download_rna(a)
-    assert rna_fp == os.path.join(
-        DATA_DIR, "rna_fasta", "GCF_001688845.2_ASM168884v2_rna_from_genomic.fna")
+    db.load_assemblies()
 
-    seqs = db.get_16S_seqs(a)
+    seqs = db.get_16S_seqs("GCF_001688845.2")
     seqs = list(seqs)
     assert len(seqs) == 4
 
@@ -51,7 +50,9 @@ def test_ssu_seqs():
     assert seqid == "lcl|NZ_CP015402.2_rrna_41"
     assert seq.startswith("ACAACGAAGAGTTTGATCCTGGCTCAGGATGAACGCTAGCGACAGG")
 
-def test_download_genome():
+def test_collect_genome():
     db = RefSeq(DATA_DIR)
-    genome_fp = db.download_genome(a)
+    db.load_assemblies()
+
+    genome_fp = db.collect_genome("GCF_001688845.2")
     assert os.path.exists(genome_fp)
