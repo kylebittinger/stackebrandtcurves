@@ -12,7 +12,7 @@ refseq = RefSeq(DATA_DIR)
 refseq.load_assemblies()
 refseq.load_seqs()
 search_app = SearchApplication(refseq)
-ani_app = AniApplication(refseq)
+ani_app = AniApplication()
 app = StackebrandtApp(refseq, search_app, ani_app)
 
 def test_main_search():

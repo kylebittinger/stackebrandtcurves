@@ -5,8 +5,7 @@ import tempfile
 from .parse import parse_ani
 
 class AniApplication:
-    def __init__(self, db, work_dir=None):
-        self.db = db
+    def __init__(self, work_dir=None):
         if work_dir is not None:
             if not os.path.exists(work_dir):
                 os.makedirs(work_dir)
@@ -33,20 +32,3 @@ class AniApplication:
         with open(ani_fp) as f:
             for ani_result in parse_ani(f):
                 yield ani_result
-
-    def compute_ani(self, search_results):
-        query = search_results[0].query
-        query_fp = self.db.download_genome(query)
-
-        subjects = list(set(r.subject for r in search_results))
-        subject_fps = {self.db.download_genome(s): s for s in subjects}
-
-        ani_results = self.get_ani(query_fp, subject_fps.keys())
-
-        subject_results = {s: None for s in subjects}
-        for res in ani_results:
-            subject_fp = res["ref_fp"]
-            subject = subject_fps[subject_fp]
-            subject_results[subject] = res
-
-        return [subject_results[r.subject] for r in search_results]

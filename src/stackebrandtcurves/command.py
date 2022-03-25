@@ -65,7 +65,7 @@ def main(argv=None):
     refseq.load_seqs()
     refseq.save_seqs()
     search_app = SearchApplication(refseq, work_dir=args.search_dir)
-    ani_app = AniApplication(refseq, work_dir=args.ani_dir)
+    ani_app = AniApplication(work_dir=args.ani_dir)
 
     app = StackebrandtApp(refseq, search_app, ani_app)
     app.min_pctid = args.min_pctid
