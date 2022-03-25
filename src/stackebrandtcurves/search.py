@@ -92,7 +92,6 @@ class PctidAligner:
         ]
         if threads is not None:
             args.extend(["--threads", str(threads)])
-        print(args)
         subprocess.check_call(args)
         return hits_fp
 

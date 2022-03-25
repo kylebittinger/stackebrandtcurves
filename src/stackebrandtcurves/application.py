@@ -77,7 +77,7 @@ class StackebrandtApp:
 
         subject_fp = self.search_app.filtered_fp
         for trial in range(10):
-            print("Follow-up search, trial {0}".format(trial + 1))
+            print("Follow-up search, trial", trial + 1)
             self.db.save_filtered_seqs(subject_fp, already_found)
             hits = self.regular_search(query_accession, subject_fp)
             n_hits = 0

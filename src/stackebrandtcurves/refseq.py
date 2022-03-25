@@ -1,3 +1,4 @@
+import collections
 import io
 import os
 import re
@@ -16,7 +17,7 @@ class RefSeq:
         self.data_dir = data_dir
         self.assemblies = {}
         self.seqs = {}
-        self.accession_seqids = {}
+        self.accession_seqids = collections.defaultdict(list)
         self.seqid_accessions = {}
 
     @property
@@ -34,6 +35,8 @@ class RefSeq:
         self.load_seqs()
 
     def load_assemblies(self):
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
         self.download_summary()
         with open(self.assembly_summary_fp) as f:
             for assembly in RefseqAssembly.parse(f):
@@ -54,16 +57,13 @@ class RefSeq:
         with open(self.accession_fp) as f:
             for seqid, accession in parse_accessions(f):
                 self.seqid_accessions[seqid] = accession
-                if accession in self.accession_seqids:
-                    self.accession_seqids[accession].append(seqid)
-                else:
-                    self.accession_seqids[accession] = [seqid]
+                self.accession_seqids[accession].append(seqid)
 
     def collect_seqs(self):
         for accession in self.assemblies.keys():
             seqs = list(self.get_16S_seqs(accession))
-            self.accession_seqids[accession] = [seqid for seqid, seq in seqs]
             for seqid, seq in seqs:
+                self.accession_seqids[accession].append(seqid)
                 self.seqs[seqid] = seq
                 self.seqid_accessions[seqid] = accession
 
@@ -115,7 +115,6 @@ class RefSeq:
             return rna_fp
         if not os.path.exists(self.rna_dir):
             os.makedirs(self.rna_dir)
-        print("Downloading 16S seqs for ", assembly.accession)
         get_url(assembly.rna_url, rna_fp + ".gz")
         subprocess.check_call(["gunzip", "-q", rna_fp + ".gz"])
         return rna_fp
@@ -233,7 +232,7 @@ def parse_desc(desc):
 
 
 def get_url(url, fp):
-    print("Downloading {0}".format(url))
+    print("Downloading", url)
     with urllib.request.urlopen(url) as resp, open(fp, 'wb') as f:
         shutil.copyfileobj(resp, f)
     return fp
