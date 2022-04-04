@@ -22,6 +22,7 @@ class StackebrandtApp:
         ani_results = self.calculate_ani(query_accession, accessions)
 
         query_seqid = hits[0]['qseqid']
+        # ANI results are guaranteed to be same order and length as hits
         for hit, ani_result in zip(hits, ani_results):
             seqid = hit["sseqid"]
             accession = self.db.seqid_accessions[seqid]
@@ -119,11 +120,17 @@ class AppResult:
 
     def format_output(self):
         pident = self.hit["pident"]
+        if self.ani_result is None:
+            ani = ""
+            fragments_aligned = ""
+            fragments_total = ""
+        else:
+            ani = self.ani_result["ani"]
+            fragments_aligned = self.ani_result["fragments_aligned"]
+            fragments_total = self.ani_result["fragments_total"]
         pident_format = round(float(pident), 2)
         return "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(
             self.query_accession, self.subject_accession,
             self.query_seqid, self.subject_seqid,
-            pident_format, self.ani_result["ani"],
-            self.ani_result["fragments_aligned"],
-            self.ani_result["fragments_total"],
+            pident_format, ani, fragments_aligned, fragments_total,
         )
