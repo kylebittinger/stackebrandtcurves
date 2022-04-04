@@ -68,6 +68,7 @@ class PctidAligner:
             "vsearch",
             "--makeudb_usearch", self.fasta_fp,
             "--output", self.reference_udb_fp,
+            "--dbmask", "none",
         ]
         return subprocess.check_call(args)
 
