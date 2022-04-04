@@ -39,6 +39,9 @@ class Vsearch:
 
         with open(hits_fp) as f:
             for hit in aligner.parse(f):
+                # Lowercase letters in the hit mess up our counting
+                hit['qseq'] = hit['qseq'].upper()
+                hit['sseq'] = hit['sseq'].upper()
                 hit["vsearch_pident"] = hit["pident"]
                 nt_positions = len(hit["qseq"])
                 nt_matches = count_matches(hit["qseq"], hit["sseq"])
