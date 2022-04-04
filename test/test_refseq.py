@@ -1,7 +1,7 @@
 import collections
 import os
 
-from stackebrandtcurves.refseq import RefSeq, parse_desc, is_low_quality
+from stackebrandtcurves.refseq import RefSeq, parse_desc, too_many_ambiguous_bases
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
@@ -57,6 +57,6 @@ def test_collect_genome():
     genome_fp = db.collect_genome("GCF_001688845.2")
     assert os.path.exists(genome_fp)
 
-def test_is_low_quality():
-    assert is_low_quality("ACGTNNNNCGT", 4)
-    assert not is_low_quality("ACGTNNNNCGT", 5)
+def test_too_many_ambiguous_bases():
+    assert not too_many_ambiguous_bases("ACGTNNNNCGT", 4)
+    assert too_many_ambiguous_bases("ACGTNNNNCGT", 3)

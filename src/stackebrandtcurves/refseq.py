@@ -131,7 +131,7 @@ class RefSeq:
 
     def is_16S(self, desc, seq):
         if is_full_length_16S(desc):
-            if not is_low_quality(seq, self.max_n):
+            if not too_many_ambiguous_bases(seq, self.max_n):
                 return True
         return False
 
@@ -217,9 +217,10 @@ def parse_accessions(f):
         yield line.split("\t")
 
 
-def is_low_quality(seq, max_n):
-    ns = "N" * max_n
+def too_many_ambiguous_bases(seq, max_n):
+    ns = "N" * (max_n + 1)
     return ns in seq
+
 
 def is_full_length_16S(desc):
     accession, attrs = parse_desc(desc)
