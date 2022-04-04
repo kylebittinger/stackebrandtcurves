@@ -19,6 +19,10 @@ def main(argv=None):
         help="Minimum 16S percent ID (default: %(default)s)",
     )
     p.add_argument(
+        "--max-n", type=int, default=5,
+        help="Maximum number of Ns in 16S sequences (default: %(default)s)",
+    )
+    p.add_argument(
         "--max-hits", type=int, default=100000,
         help="Maximum number of hits in each search (default: %(default)s)",
     )
@@ -59,7 +63,7 @@ def main(argv=None):
             args.assembly_accession)
     random.seed(args.seed)
 
-    db = RefSeq(args.data_dir)
+    db = RefSeq(args.data_dir, args.max_n)
     db.load()
 
     app = StackebrandtApp(db, args.search_dir, args.ani_dir)
