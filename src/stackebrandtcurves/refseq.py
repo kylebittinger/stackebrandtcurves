@@ -13,8 +13,9 @@ class RefSeq:
         "bacteria/assembly_summary.txt"
         )
 
-    def __init__(self, data_dir="refseq_data"):
+    def __init__(self, data_dir="refseq_data", max_n=5):
         self.data_dir = data_dir
+        self.max_n = max_n
         self.assemblies = {}
         self.seqs = {}
         self.accession_seqids = collections.defaultdict(list)
@@ -123,10 +124,16 @@ class RefSeq:
         rna_fp = self.download_rna(accession)
         with open(rna_fp, "rt") as f:
             for desc, seq in parse_fasta(f):
-                if is_full_length_16S(desc):
+                if self.is_16S(desc, seq):
                     print(desc)
                     seqid = desc.split()[0]
                     yield seqid, seq
+
+    def is_16S(self, desc, seq):
+        if is_full_length_16S(desc):
+            if not is_low_quality(seq, self.max_n):
+                return True
+        return False
 
     @property
     def ssu_fasta_fp(self):
@@ -209,6 +216,10 @@ def parse_accessions(f):
         line = line.strip()
         yield line.split("\t")
 
+
+def is_low_quality(seq, max_n):
+    ns = "N" * max_n
+    return ns in seq
 
 def is_full_length_16S(desc):
     accession, attrs = parse_desc(desc)

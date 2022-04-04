@@ -1,7 +1,7 @@
 import collections
 import os
 
-from stackebrandtcurves.refseq import RefSeq, parse_desc
+from stackebrandtcurves.refseq import RefSeq, parse_desc, is_low_quality
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
@@ -28,7 +28,7 @@ def test_parse_desc():
         "gbkey": "rRNA",
     }
 
-def test_load():
+def test_load_assemblies():
     db = RefSeq(DATA_DIR)
     db.load_assemblies()
 
@@ -56,3 +56,7 @@ def test_collect_genome():
 
     genome_fp = db.collect_genome("GCF_001688845.2")
     assert os.path.exists(genome_fp)
+
+def test_is_low_quality():
+    assert is_low_quality("ACGTNNNNCGT", 4)
+    assert not is_low_quality("ACGTNNNNCGT", 5)
