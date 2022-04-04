@@ -35,6 +35,7 @@ class FastAni:
             "--refList", reflist_fp,
             "--output", ani_fp,
             "--threads", str(threads),
+            "--minFrag", "1",
         ])
 
         with open(ani_fp) as f:
