@@ -1,5 +1,12 @@
 # stackebrandtcurves
 
+<!-- Begin badges -->
+[![Tests](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/tests.yml/badge.svg)](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/tests.yml)
+[![CodeCov](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/codecov.yml/badge.svg)](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/codecov.yml)
+[![Super-Linter](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/linter.yml/badge.svg)](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/linter.yml)
+[![Upload Python Package](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/python-publish.yml/badge.svg)](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/python-publish.yml)
+<!--  End badges  -->
+
 Stackebrandt curves show the relationship between average nucleotide
 identity (ANI) and 16S rRNA gene similarity for bacterial genomes.
 
@@ -42,18 +49,19 @@ Systematic and Environmental Microbiology* **64**, 346 (2014).
 ## Installation
 
 The Python library and command-line program can be installed using
-[pip](https://pypi.org/project/pip/).
+[pip](https://pypi.org/project/pip/). Besides the python libraries listed 
+in the setup file, this program
+requires `vsearch` and `fastANI` to be installed. They are both available
+through [conda](https://anaconda.org/bioconda/vsearch), which is our
+recommended method for installation.
 
 ```bash
 git clone https://github.com/kylebittinger/stackebrandtcurves.git
 cd stackebrandtcurves
+conda env create -f stackebrandtcurves_env.yml -n stackebrandtcurves
+conda activate stackebrandtcurves
 pip install -e .
 ```
-
-Besides the python libraries listed in the setup file, this program
-requires `vsearch` and `fastANI` to be installed. They are both available
-through [conda](https://anaconda.org/bioconda/vsearch), which is our
-recommended method for installation.
 
 ## Usage
 
