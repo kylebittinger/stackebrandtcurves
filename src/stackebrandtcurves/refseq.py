@@ -9,9 +9,8 @@ import urllib.request
 
 class RefSeq:
     summary_url = (
-        "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/"
-        "bacteria/assembly_summary.txt"
-        )
+        "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/" "bacteria/assembly_summary.txt"
+    )
 
     def __init__(self, data_dir="refseq_data", max_n=5):
         self.data_dir = data_dir
@@ -146,12 +145,28 @@ class RefSeq:
 
 class RefseqAssembly:
     fields = [
-        "assembly_accession", "bioproject", "biosample", "wgs_master",
-        "refseq_category", "taxid", "species_taxid", "organism_name",
-        "infraspecific_name", "isolate", "version_status", "assembly_level",
-        "release_type", "genome_rep", "seq_rel_date", "asm_name", "submitter",
-        "gbrs_paired_asm", "paired_asm_comp", "ftp_path",
-        "excluded_from_refseq", "relation_to_type_material",
+        "assembly_accession",
+        "bioproject",
+        "biosample",
+        "wgs_master",
+        "refseq_category",
+        "taxid",
+        "species_taxid",
+        "organism_name",
+        "infraspecific_name",
+        "isolate",
+        "version_status",
+        "assembly_level",
+        "release_type",
+        "genome_rep",
+        "seq_rel_date",
+        "asm_name",
+        "submitter",
+        "gbrs_paired_asm",
+        "paired_asm_comp",
+        "ftp_path",
+        "excluded_from_refseq",
+        "relation_to_type_material",
     ]
 
     def __init__(self, assembly_accession, ftp_path, **kwargs):
@@ -182,13 +197,11 @@ class RefseqAssembly:
 
     @property
     def rna_url(self):
-        return "{0}/{1}_rna_from_genomic.fna.gz".format(
-            self.base_url, self.basename)
+        return "{0}/{1}_rna_from_genomic.fna.gz".format(self.base_url, self.basename)
 
     @property
     def genome_url(self):
-        return "{0}/{1}_genomic.fna.gz".format(
-            self.base_url, self.basename)
+        return "{0}/{1}_genomic.fna.gz".format(self.base_url, self.basename)
 
 
 def parse_fasta(f):
@@ -235,7 +248,7 @@ def is_full_length_16S(desc):
 
 def parse_desc(desc):
     accession, sep, rest = desc.partition(" ")
-    toks = re.findall(r'\[([^\]]+)\]', rest)
+    toks = re.findall(r"\[([^\]]+)\]", rest)
     attrs = {}
     for tok in toks:
         attr, sep, val = tok.partition("=")
@@ -245,6 +258,6 @@ def parse_desc(desc):
 
 def get_url(url, fp):
     print("Downloading", url)
-    with urllib.request.urlopen(url) as resp, open(fp, 'wb') as f:
+    with urllib.request.urlopen(url) as resp, open(fp, "wb") as f:
         shutil.copyfileobj(resp, f)
     return fp

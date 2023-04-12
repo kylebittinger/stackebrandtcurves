@@ -4,8 +4,7 @@ import tempfile
 
 
 class FastAni:
-    fields = [
-        "query_fp", "ref_fp", "ani", "fragments_aligned", "fragments_total"]
+    fields = ["query_fp", "ref_fp", "ani", "fragments_aligned", "fragments_total"]
     field_types = [str, str, float, int, int]
 
     def __init__(self, work_dir=None):
@@ -29,14 +28,21 @@ class FastAni:
                 f.write("\n")
         ani_fp = os.path.join(self.work_dir, "ani.txt")
 
-        subprocess.check_call([
-            "fastANI",
-            "--query", query_genome_fp,
-            "--refList", reflist_fp,
-            "--output", ani_fp,
-            "--threads", str(threads),
-            "--minFrag", "1",
-        ])
+        subprocess.check_call(
+            [
+                "fastANI",
+                "--query",
+                query_genome_fp,
+                "--refList",
+                reflist_fp,
+                "--output",
+                ani_fp,
+                "--threads",
+                str(threads),
+                "--minFrag",
+                "1",
+            ]
+        )
 
         with open(ani_fp) as f:
             for ani_result in self.parse(f):
