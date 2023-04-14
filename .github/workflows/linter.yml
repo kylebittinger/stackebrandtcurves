@@ -23,4 +23,4 @@ jobs:
 
           VALIDATE_PYTHON_BLACK: true
 
-          FILTER_REGEX_INCLUDE: src/.*|test/.*
+          FILTER_REGEX_INCLUDE: src/.*|test/.*|setup.py

@@ -3,4 +3,4 @@ channels:
   - conda-forge
 dependencies:
   - fastani=1.2
-  - vsearch
+  - vsearch=2.22.1
