@@ -2,5 +2,5 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - fastani
+  - fastani=1.2
   - vsearch

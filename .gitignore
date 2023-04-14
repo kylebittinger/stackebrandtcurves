@@ -1,3 +1,6 @@
+test/data/genome_fasta/
+test/data/rna_fasta/
+
 # Emacs backup files
 *~
 
