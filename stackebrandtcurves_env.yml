@@ -4,3 +4,4 @@ channels:
 dependencies:
   - fastani=1.2
   - vsearch=2.22.1
+  - python=3.8
