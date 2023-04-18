@@ -1,4 +1,5 @@
 import collections
+import logging
 import os
 import random
 import subprocess
@@ -14,6 +15,7 @@ class Vsearch:
         else:
             self._work_dir_obj = tempfile.TemporaryDirectory()
             self.work_dir = self._work_dir_obj.name
+        logging.info(f"Vsearch working directory: {self.work_dir}")
 
     @property
     def filtered_fp(self):
@@ -80,7 +82,10 @@ class PctidAligner:
             "--dbmask",
             "none",
         ]
-        return subprocess.check_call(args)
+        logging.info(f"Calling: {str(args)}")
+        ret = subprocess.check_call(args)
+        logging.info(f"Finished Vsearch call")
+        return ret
 
     def clear_db(self):
         os.remove(self.reference_udb_fp)
@@ -114,7 +119,9 @@ class PctidAligner:
         ]
         if threads is not None:
             args.extend(["--threads", str(threads)])
+        logging.info(f"Calling: {str(args)}")
         subprocess.check_call(args)
+        logging.info(f"Finished Vsearch call")
         return hits_fp
 
     def parse(self, f):

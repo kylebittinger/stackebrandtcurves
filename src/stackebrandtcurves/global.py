@@ -1,13 +1,8 @@
 import argparse
-import collections
-import itertools
+import logging
 import os
 import os.path
 import random
-import re
-import shutil
-import subprocess
-import urllib.error
 
 
 def main_train_soft_threshold(argv=None):
@@ -91,7 +86,7 @@ def main_train_soft_threshold(argv=None):
                     args.output_file.write(selected_pair.format_output())
                     args.output_file.flush()
                 except Exception as e:
-                    print(e)
+                    logging.warn(e)
                 else:
                     found = True
 

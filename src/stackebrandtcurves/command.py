@@ -1,4 +1,5 @@
 import argparse
+import logging
 import random
 
 from .refseq import RefSeq
@@ -71,11 +72,21 @@ def main(argv=None):
         default="refseq_data",
         help="Data directory (default: refseq_data)",
     )
+    p.add_argument(
+        "--log_level",
+        type=int,
+        help="Sets the log level, default is info, 10 for debug (Default: 20)",
+        default=20,
+    )
+
     args = p.parse_args(argv)
+    logging.basicConfig()
+    logging.getLogger().setLevel(args.log_level)
 
     if args.output_file is None:
         args.output_file = "assembly_{0}_pctid_ani.txt".format(args.assembly_accession)
     random.seed(args.seed)
+    logging.info(f"Starting stackebrandtcurve with seed {args.seed}")
 
     db = RefSeq(args.data_dir, args.max_n)
     db.load()

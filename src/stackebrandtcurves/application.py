@@ -1,3 +1,4 @@
+import logging
 from .ani import FastAni
 from .search import Vsearch, limit_hits
 
@@ -32,6 +33,7 @@ class StackebrandtApp:
             )
 
     def search(self, query_accession):
+        logging.debug(f"Query accession: {query_accession}")
         if self.multi_stage_search:
             hits = self.exhaustive_search(query_accession)
         else:
@@ -62,6 +64,9 @@ class StackebrandtApp:
         if subject_fp is None:
             subject_fp = self.db.ssu_fasta_fp
         query_seqids = self.db.accession_seqids[query_accession]
+        if not query_seqids:
+            logging.error("Query for 16S returned no results")
+            raise ValueError(f"There are no RefSeq 16S matches for {query_accession}")
         query_seqid = query_seqids[0]
         query_seq = self.db.seqs[query_seqid]
         hits = self.search_app.search_once(
@@ -86,7 +91,7 @@ class StackebrandtApp:
 
         subject_fp = self.search_app.filtered_fp
         for trial in range(10):
-            print("Follow-up search, trial", trial + 1)
+            logging.info("Follow-up search, trial", trial + 1)
             self.db.save_filtered_seqs(subject_fp, already_found)
             hits = self.regular_search(query_accession, subject_fp)
             n_hits = 0
@@ -96,7 +101,7 @@ class StackebrandtApp:
                 yield hit
             if n_hits == 0:
                 return
-        print("Exhausted 10 search trials")
+        logging.info("Exhausted 10 search trials")
 
 
 class AppResult:

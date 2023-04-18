@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 import tempfile
@@ -15,6 +16,7 @@ class FastAni:
         else:
             self._work_dir_obj = tempfile.TemporaryDirectory()
             self.work_dir = self._work_dir_obj.name
+        logging.info(f"fastANI working directory: {self.work_dir}")
 
     def run(self, query_genome_fp, subject_genome_fps, threads=None):
         if threads is None:
@@ -28,21 +30,23 @@ class FastAni:
                 f.write("\n")
         ani_fp = os.path.join(self.work_dir, "ani.txt")
 
-        subprocess.check_call(
-            [
-                "fastANI",
-                "--query",
-                query_genome_fp,
-                "--refList",
-                reflist_fp,
-                "--output",
-                ani_fp,
-                "--threads",
-                str(threads),
-                "--minFrag",
-                "1",
-            ]
-        )
+        args = [
+            "fastANI",
+            "--query",
+            query_genome_fp,
+            "--refList",
+            reflist_fp,
+            "--output",
+            ani_fp,
+            "--threads",
+            str(threads),
+            "--minFrag",
+            "1",
+        ]
+
+        logging.info(f"Calling: {str(args)}")
+        subprocess.check_call(args)
+        logging.info("Finished fastANI call")
 
         with open(ani_fp) as f:
             for ani_result in self.parse(f):

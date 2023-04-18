@@ -1,5 +1,6 @@
 import collections
 import io
+import logging
 import os
 import re
 import shutil
@@ -19,6 +20,8 @@ class RefSeq:
         self.seqs = {}
         self.accession_seqids = collections.defaultdict(list)
         self.seqid_accessions = {}
+
+        logging.info(f"Data directory: {data_dir}")
 
     @property
     def assembly_summary_fp(self):
@@ -124,7 +127,7 @@ class RefSeq:
         with open(rna_fp, "rt") as f:
             for desc, seq in parse_fasta(f):
                 if self.is_16S(desc, seq):
-                    print(desc)
+                    logging.info(desc)
                     seqid = desc.split()[0]
                     yield seqid, seq
 
@@ -256,8 +259,15 @@ def parse_desc(desc):
     return accession, attrs
 
 
-def get_url(url, fp):
-    print("Downloading", url)
-    with urllib.request.urlopen(url) as resp, open(fp, "wb") as f:
-        shutil.copyfileobj(resp, f)
+def get_url(url, fp, retries=3):
+    logging.info("Downloading", url)
+    while retries:
+        try:
+            with urllib.request.urlopen(url) as resp, open(fp, "wb") as f:
+                shutil.copyfileobj(resp, f)
+            break
+        except:
+            retries -= 1
+            logging.info("Retrying download...")
+
     return fp
