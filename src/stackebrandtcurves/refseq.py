@@ -260,7 +260,7 @@ def parse_desc(desc):
 
 
 def get_url(url, fp, retries=3):
-    logging.info("Downloading", url)
+    logging.info(f"Downloading {url}")
     while retries:
         try:
             with urllib.request.urlopen(url) as resp, open(fp, "wb") as f:
