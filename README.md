@@ -1,12 +1,5 @@
 # stackebrandtcurves
 
-<!-- Begin badges -->
-[![Tests](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/tests.yml/badge.svg)](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/tests.yml)
-[![CodeCov](https://codecov.io/gh/kylebittinger/stackebrandtcurves/branch/main/graph/badge.svg)](https://codecov.io/gh/kylebittinger/stackebrandtcurves)
-[![Super-Linter](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/linter.yml/badge.svg)](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/linter.yml)
-[![Upload Python Package](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/python-publish.yml/badge.svg)](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/python-publish.yml)
-<!--  End badges  -->
-
 Stackebrandt curves show the relationship between average nucleotide
 identity (ANI) and 16S rRNA gene similarity for bacterial genomes.
 
