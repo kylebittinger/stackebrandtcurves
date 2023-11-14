@@ -1,53 +1,56 @@
 import argparse
-import collections
-import itertools
+import logging
 import os
 import os.path
 import random
-import re
-import shutil
-import subprocess
-import urllib.error
+
 
 def main_train_soft_threshold(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument(
-        "--output-file", type=argparse.FileType("w"),
+        "--output-file",
+        type=argparse.FileType("w"),
         default="refseq_pctid_ani.tsv",
         help="Output file",
     )
     p.add_argument(
-        "--min_pctid", type=float, default=97.0,
+        "--min_pctid",
+        type=float,
+        default=97.0,
         help="Minimum 16S percent ID",
     )
     p.add_argument(
-        "--num-threads", type=int,
+        "--num-threads",
+        type=int,
         help="Number of threads for 16S percent ID (default: use all CPUs)",
     )
     p.add_argument(
-        "--num-ani", type=int, default=100,
+        "--num-ani",
+        type=int,
+        default=100,
         help="Number of genome pairs on which to evaluate ANI",
     )
     p.add_argument(
-        "--seed", type=int, default=42,
+        "--seed",
+        type=int,
+        default=42,
         help="Random number seed",
     )
     args = p.parse_args()
     args.output_file.write(
         "query_assembly\tsubject_assembly\t"
         "query_seqid\tsubject_seqid\t"
-        "pctid\tani\n")
-    
+        "pctid\tani\n"
+    )
+
     # Set seed for 16S selection
     random.seed(args.seed)
-    
+
     # Load all assemblies
     assemblies = RefseqAssembly.load()
 
     # 16S database with one random sequence from each assembly
-    db = Refseq16SDatabase(
-        "refseq_16S_all.fasta",
-        "refseq_16S_accessions_all.txt")
+    db = Refseq16SDatabase("refseq_16S_all.fasta", "refseq_16S_accessions_all.txt")
     if os.path.exists(db.accession_fp):
         db.load(assemblies)
     else:
@@ -72,7 +75,8 @@ def main_train_soft_threshold(argv=None):
                 continue
             query_seqid = random.choice(query_assembly_seqids)
             assembly_pairs = db.search_one(
-                query_seqid, current_pctid, threads=args.num_threads)
+                query_seqid, current_pctid, threads=args.num_threads
+            )
             assembly_pairs = list(assembly_pairs)
             if assembly_pairs:
                 try:
@@ -82,9 +86,10 @@ def main_train_soft_threshold(argv=None):
                     args.output_file.write(selected_pair.format_output())
                     args.output_file.flush()
                 except Exception as e:
-                    print(e)
+                    logging.warn(e)
                 else:
                     found = True
+
 
 def pctid_range(min_pctid):
     assert 50.0 < min_pctid <= 100.0
