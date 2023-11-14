@@ -42,18 +42,19 @@ Systematic and Environmental Microbiology* **64**, 346 (2014).
 ## Installation
 
 The Python library and command-line program can be installed using
-[pip](https://pypi.org/project/pip/).
+[pip](https://pypi.org/project/pip/). Besides the python libraries listed 
+in the setup file, this program
+requires `vsearch` and `fastANI` to be installed. They are both available
+through [conda](https://anaconda.org/bioconda/vsearch), which is our
+recommended method for installation.
 
 ```bash
 git clone https://github.com/kylebittinger/stackebrandtcurves.git
 cd stackebrandtcurves
+conda env create -f stackebrandtcurves_env.yml -n stackebrandtcurves
+conda activate stackebrandtcurves
 pip install -e .
 ```
-
-Besides the python libraries listed in the setup file, this program
-requires `vsearch` and `fastANI` to be installed. They are both available
-through [conda](https://anaconda.org/bioconda/vsearch), which is our
-recommended method for installation.
 
 ## Usage
 
