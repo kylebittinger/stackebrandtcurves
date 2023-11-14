@@ -1,10 +1,10 @@
 # stackebrandtcurves
 
 <!-- Begin badges -->
-[![Tests](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/tests.yml/badge.svg)](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/tests.yml)
-[![CodeCov](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/codecov.yml/badge.svg)](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/codecov.yml)
-[![Super-Linter](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/linter.yml/badge.svg)](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/linter.yml)
-[![Upload Python Package](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/python-publish.yml/badge.svg)](https://github.com/Ulthran/stackebrandtcurves/actions/workflows/python-publish.yml)
+[![Tests](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/tests.yml/badge.svg)](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/tests.yml)
+[![CodeCov](https://codecov.io/gh/kylebittinger/stackebrandtcurves/branch/main/graph/badge.svg)](https://codecov.io/gh/kylebittinger/stackebrandtcurves)
+[![Super-Linter](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/linter.yml/badge.svg)](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/linter.yml)
+[![Upload Python Package](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/python-publish.yml/badge.svg)](https://github.com/kylebittinger/stackebrandtcurves/actions/workflows/python-publish.yml)
 <!--  End badges  -->
 
 Stackebrandt curves show the relationship between average nucleotide
