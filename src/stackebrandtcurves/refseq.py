@@ -1,5 +1,6 @@
 import collections
 import io
+import logging
 import os
 import re
 import shutil
@@ -9,9 +10,8 @@ import urllib.request
 
 class RefSeq:
     summary_url = (
-        "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/"
-        "bacteria/assembly_summary.txt"
-        )
+        "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/" "bacteria/assembly_summary.txt"
+    )
 
     def __init__(self, data_dir="refseq_data", max_n=5):
         self.data_dir = data_dir
@@ -20,6 +20,8 @@ class RefSeq:
         self.seqs = {}
         self.accession_seqids = collections.defaultdict(list)
         self.seqid_accessions = {}
+
+        logging.info(f"Data directory: {data_dir}")
 
     @property
     def assembly_summary_fp(self):
@@ -125,7 +127,7 @@ class RefSeq:
         with open(rna_fp, "rt") as f:
             for desc, seq in parse_fasta(f):
                 if self.is_16S(desc, seq):
-                    print(desc)
+                    logging.info(desc)
                     seqid = desc.split()[0]
                     yield seqid, seq
 
@@ -146,12 +148,28 @@ class RefSeq:
 
 class RefseqAssembly:
     fields = [
-        "assembly_accession", "bioproject", "biosample", "wgs_master",
-        "refseq_category", "taxid", "species_taxid", "organism_name",
-        "infraspecific_name", "isolate", "version_status", "assembly_level",
-        "release_type", "genome_rep", "seq_rel_date", "asm_name", "submitter",
-        "gbrs_paired_asm", "paired_asm_comp", "ftp_path",
-        "excluded_from_refseq", "relation_to_type_material",
+        "assembly_accession",
+        "bioproject",
+        "biosample",
+        "wgs_master",
+        "refseq_category",
+        "taxid",
+        "species_taxid",
+        "organism_name",
+        "infraspecific_name",
+        "isolate",
+        "version_status",
+        "assembly_level",
+        "release_type",
+        "genome_rep",
+        "seq_rel_date",
+        "asm_name",
+        "submitter",
+        "gbrs_paired_asm",
+        "paired_asm_comp",
+        "ftp_path",
+        "excluded_from_refseq",
+        "relation_to_type_material",
     ]
 
     def __init__(self, assembly_accession, ftp_path, **kwargs):
@@ -182,13 +200,11 @@ class RefseqAssembly:
 
     @property
     def rna_url(self):
-        return "{0}/{1}_rna_from_genomic.fna.gz".format(
-            self.base_url, self.basename)
+        return "{0}/{1}_rna_from_genomic.fna.gz".format(self.base_url, self.basename)
 
     @property
     def genome_url(self):
-        return "{0}/{1}_genomic.fna.gz".format(
-            self.base_url, self.basename)
+        return "{0}/{1}_genomic.fna.gz".format(self.base_url, self.basename)
 
 
 def parse_fasta(f):
@@ -235,7 +251,7 @@ def is_full_length_16S(desc):
 
 def parse_desc(desc):
     accession, sep, rest = desc.partition(" ")
-    toks = re.findall(r'\[([^\]]+)\]', rest)
+    toks = re.findall(r"\[([^\]]+)\]", rest)
     attrs = {}
     for tok in toks:
         attr, sep, val = tok.partition("=")
@@ -243,8 +259,15 @@ def parse_desc(desc):
     return accession, attrs
 
 
-def get_url(url, fp):
-    print("Downloading", url)
-    with urllib.request.urlopen(url) as resp, open(fp, 'wb') as f:
-        shutil.copyfileobj(resp, f)
+def get_url(url, fp, retries=3):
+    logging.info(f"Downloading {url}")
+    while retries:
+        try:
+            with urllib.request.urlopen(url) as resp, open(fp, "wb") as f:
+                shutil.copyfileobj(resp, f)
+            break
+        except:
+            retries -= 1
+            logging.info("Retrying download...")
+
     return fp
