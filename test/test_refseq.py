@@ -47,7 +47,7 @@ def test_get_16S_seqs():
     assert len(seqs) == 4
 
     seqid, seq = seqs[0]
-    assert seqid == "lcl|NZ_CP015402.2_rrna_41"
+    assert seqid == "lcl|NZ_CP015402.2_rrna_A4V02_RS09795_41"
     assert seq.startswith("ACAACGAAGAGTTTGATCCTGGCTCAGGATGAACGCTAGCGACAGG")
 
 def test_collect_genome():
