@@ -20,7 +20,7 @@ class FastAni:
     def run(self, query_genome_fp, subject_genome_fps, threads=None):
         if threads is None:
             # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count
-            threads = len(os.sched_getaffinity(0))
+            threads = os.process_cpu_count()
 
         reflist_fp = os.path.join(self.work_dir, "ref_list.txt")
         with open(reflist_fp, "w") as f:
@@ -35,7 +35,7 @@ class FastAni:
             "--refList", reflist_fp,
             "--output", ani_fp,
             "--threads", str(threads),
-            "--minFrag", "1",
+            "--minFraction", "0.1",
         ])
 
         with open(ani_fp) as f:
