@@ -33,8 +33,8 @@ def main(argv=None):
             "percent ID (default: %(default)s)"),
     )
     p.add_argument(
-        "--num-threads", type=int,
-        help="Number of threads for 16S percent ID (default: use all CPUs)",
+        "--num-threads", type=int, default=1,
+        help="Number of threads (default: 1)",
     )
     p.add_argument(
         "--seed", type=int, default=42,

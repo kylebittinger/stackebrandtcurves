@@ -17,11 +17,7 @@ class FastAni:
             self._work_dir_obj = tempfile.TemporaryDirectory()
             self.work_dir = self._work_dir_obj.name
 
-    def run(self, query_genome_fp, subject_genome_fps, threads=None):
-        if threads is None:
-            # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count
-            threads = os.process_cpu_count()
-
+    def run(self, query_genome_fp, subject_genome_fps, threads=1):
         reflist_fp = os.path.join(self.work_dir, "ref_list.txt")
         with open(reflist_fp, "w") as f:
             for subject_fp in subject_genome_fps:

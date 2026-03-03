@@ -8,7 +8,7 @@ class StackebrandtApp:
         self.ani_app = FastAni(ani_dir)
         self.min_pctid = 90.0
         self.max_hits = 100000
-        self.threads = None
+        self.threads = 1
         self.multi_stage_search = False
         self.max_unique_pctid = 100
 
