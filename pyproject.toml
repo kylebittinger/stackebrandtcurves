@@ -1,3 +1,40 @@
 [build-system]
-requires = ["setuptools >= 40.6.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stackebrandtcurves"
+version = "1.1.0.dev1"
+description = "Compare 16S rRNA gene similarity vs. full genome similarity"
+readme = "README.md"
+license = { text = "GPL-2.0-or-later" }
+requires-python = ">=3.10"
+
+authors = [
+  { name = "Kyle Bittinger", email = "kylebittinger@gmail.com" },
+]
+
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+dependencies = [
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "black",
+]
+
+[project.urls]
+Homepage = "https://github.com/kylebittinger/stackebrandtcurves"
+
+[project.scripts]
+stackebrandtcurve = "stackebrandtcurves.command:main"
